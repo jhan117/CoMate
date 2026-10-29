@@ -1,0 +1,45 @@
+.header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.logoText {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: #111827;
+}
+
+.logoAccent {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  padding-left: 12px;
+  border-left: 1.5px solid #e5e7eb;
+}
