@@ -7,6 +7,14 @@
     * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
     body { margin: 20px; background-color: #f4f6f8; color: #333; }
     
+    .auth-bar {
+      max-width: 800px; margin: 0 auto 20px auto; background: white;
+      padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .auth-inputs { display: flex; gap: 8px; }
+    .auth-inputs input { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+
     .form-container { max-width: 800px; margin: 0 auto 30px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .form-container input, .form-container button { width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
     .dept-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -25,12 +33,13 @@
 </head>
 <body>
 
+  <div class="auth-bar" id="authBar"></div>
+
   <h1 style="text-align: center; color: #2c3e50;">CoMate 모집 게시판</h1>
 
   <div class="form-container">
     <h3>📢 새 모집글 작성하기</h3>
     <input type="text" id="title" placeholder="대회/공모전 제목">
-    <input type="text" id="author" placeholder="작성자 이름">
     
     <label style="font-size: 13px; font-weight: bold;">모집 학과 및 인원 지정</label>
     <div id="deptInputGroup">
@@ -49,7 +58,36 @@
   <div class="card-container" id="cardContainer"></div>
 
   <script>
+    let currentUser = null; 
     const editModes = {};
+
+    async function checkAuth() {
+      const res = await fetch('/api/me');
+      const data = await res.json();
+      const authBar = document.getElementById('authBar');
+      if (data.loggedIn) {
+        currentUser = data.user;
+        authBar.innerHTML = `<span>👤 <strong>${currentUser.name}</strong> 님 환영합니다!</span><button onclick="logout()" style="padding: 6px 12px; cursor:pointer;">로그아웃</button>`;
+      } else {
+        currentUser = null;
+        authBar.innerHTML = `<span>로그인이 필요합니다. (계정: user1 / 123)</span>
+          <div class="auth-inputs"><input type="text" id="loginId" placeholder="아이디"><input type="password" id="loginPw" placeholder="비밀번호"><button onclick="login()" style="padding: 6px 12px; cursor:pointer;">로그인</button></div>`;
+      }
+      loadPosts(); 
+    }
+
+    async function login() {
+      const username = document.getElementById('loginId').value;
+      const password = document.getElementById('loginPw').value;
+      const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+      if (res.ok) checkAuth(); else alert((await res.json()).message);
+    }
+
+    async function logout() { 
+      await fetch('/api/logout', { method: 'POST' }); 
+      alert('로그아웃 되었습니다.'); 
+      checkAuth(); 
+    }
 
     async function loadPosts() {
       const res = await fetch('/api/posts');
@@ -57,25 +95,17 @@
       const container = document.getElementById('cardContainer');
       container.innerHTML = '';
 
-      if (posts.length === 0) {
-        return container.innerHTML = `<p style="color:#888; text-align:center; width:100%;">아직 등록된 모집글이 없습니다.</p>`;
-      }
+      if (posts.length === 0) return container.innerHTML = `<p style="color:#888; text-align:center; width:100%;">아직 등록된 모집글이 없습니다.</p>`;
 
       posts.forEach(post => {
         const isEditing = !!editModes[post.id];
+        const isAuthor = currentUser && currentUser.name === post.author; 
 
         let deptListHtml = '';
         post.departments.forEach(dept => {
           const isDeptFull = dept.currentMembers >= dept.maxMembers;
-          deptListHtml += `
-            <div class="dept-item">
-              <span><strong>${dept.deptName}</strong> (${dept.currentMembers}/${dept.maxMembers})</span>
-              ${isEditing ? `
-                <button class="btn-dept-approve" onclick="approveDepartment('${post.id}', '${dept.deptName}')" ${isDeptFull ? 'disabled' : ''}>
-                  ${isDeptFull ? '완료' : '+1 승인'}
-                </button>
-              ` : ''}
-            </div>`;
+          deptListHtml += `<div class="dept-item"><span><strong>${dept.deptName}</strong> (${dept.currentMembers}/${dept.maxMembers})</span>
+            ${(isAuthor && isEditing) ? `<button class="btn-dept-approve" onclick="approveDepartment('${post.id}', '${dept.deptName}')" ${isDeptFull ? 'disabled' : ''}>${isDeptFull ? '완료' : '+1 승인'}</button>` : ''}</div>`;
         });
 
         const card = document.createElement('div');
@@ -83,16 +113,17 @@
         card.innerHTML = `
           <div>
             <div class="card-title">${post.title}</div>
-            <div style="font-size: 12px; color: #888; margin-bottom: 12px;">작성자: ${post.author || '작성자'}</div>
+            <div style="font-size: 12px; color: #888; margin-bottom: 12px;">작성자: ${post.author}</div>
             <div class="dept-list">${deptListHtml}</div>
             <div style="font-size: 12px; color: #555;">마감일: ${post.deadline}</div>
           </div>
+          ${isAuthor ? `
           <div style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px;">
             <div class="btn-row">
               <button class="btn btn-edit" onclick="toggleEditMode('${post.id}')">${isEditing ? '완료' : '수정 (+인원)'}</button>
               <button class="btn btn-del" onclick="deletePost('${post.id}')">삭제</button>
             </div>
-          </div>`;
+          </div>` : ''}`;
         container.appendChild(card);
       });
     }
@@ -104,51 +135,27 @@
       document.getElementById('deptInputGroup').appendChild(div);
     }
 
-    function toggleEditMode(id) {
-      editModes[id] = !editModes[id];
-      loadPosts();
-    }
+    function toggleEditMode(id) { editModes[id] = !editModes[id]; loadPosts(); }
 
     async function approveDepartment(postId, deptName) {
-      await fetch(`/api/posts/${postId}/join`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deptName })
-      });
+      await fetch(`/api/posts/${postId}/join`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deptName }) });
       loadPosts();
     }
 
     async function createPost() {
+      if (!currentUser) return alert('로그인 후 이용 가능합니다!');
       const title = document.getElementById('title').value;
-      const author = document.getElementById('author').value;
       const deadline = document.getElementById('deadline').value;
       const deptNames = document.querySelectorAll('.dept-name');
       const deptMaxes = document.querySelectorAll('.dept-max');
-
       const departments = [];
-      deptNames.forEach((input, index) => {
-        if (input.value && deptMaxes[index].value) {
-          departments.push({ deptName: input.value, maxMembers: deptMaxes[index].value });
-        }
-      });
-
-      if (!title || departments.length === 0 || !deadline) {
-        return alert('모든 필수 항목을 입력해주세요.');
-      }
+      deptNames.forEach((input, index) => { if (input.value && deptMaxes[index].value) departments.push({ deptName: input.value, maxMembers: deptMaxes[index].value }); });
 
       const res = await fetch('/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, author, departments, deadline })
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, departments, deadline })
       });
-
-      if (res.ok) {
-        alert('작성되었습니다!');
-        document.getElementById('title').value = '';
-        document.getElementById('author').value = '';
-        document.getElementById('deadline').value = '';
-        loadPosts();
-      }
+      if (res.ok) { alert('작성되었습니다!'); loadPosts(); }
     }
 
     async function deletePost(id) {
@@ -158,7 +165,7 @@
       }
     }
 
-    loadPosts();
+    checkAuth();
   </script>
 </body>
 </html>
