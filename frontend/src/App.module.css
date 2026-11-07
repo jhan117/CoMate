@@ -1,5 +1,14 @@
-.app {
-  min-height: 100vh;
+.container {
+  margin: 20px;
+  font-family: 'Pretendard', sans-serif;
+  color: #333333;
+}
+
+.cardContainer {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
 }
