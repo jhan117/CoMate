@@ -1,0 +1,162 @@
+.formCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.formHeader {
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 16px;
+}
+
+.formTitle {
+  font-size: 21px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.formDesc {
+  font-size: 13.5px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .profileGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profileItem {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profileLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.profileValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.charCount {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.deptRadioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.deptRadioCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.deptRadioSelected {
+  border-color: #4f46e5;
+  background-color: #eef2ff;
+}
+
+.deptRadioDisabled {
+  opacity: 0.55;
+  background-color: #f9fafb;
+  cursor: not-allowed;
+}
+
+.deptRadioText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deptRadioName {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.deptRadioMeta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #111827;
+  background-color: #ffffff;
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.formActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}

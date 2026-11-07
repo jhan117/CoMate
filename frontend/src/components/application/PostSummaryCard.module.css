@@ -1,0 +1,314 @@
+/* 공통 요소 */
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #eef2ff;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.subTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.deptName {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.applicantCountPill {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4f46e5;
+  background-color: #eef2ff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.progressFillFull {
+  background: #9ca3af;
+}
+
+/* 1. 지원자 화면: 좌측 사이드바 카드 */
+.sidebarCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+}
+
+.sidebarBadgeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.deadlineText {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.sidebarTitle {
+  font-size: 19px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.sidebarAuthor {
+  font-size: 13.5px;
+  color: #4b5563;
+  margin-bottom: 18px;
+}
+
+.contentSection {
+  margin-bottom: 18px;
+}
+
+.quotaSection {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 16px;
+}
+
+.quotaSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.totalSupportTag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.sidebarQuotaList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebarQuotaItem {
+  background-color: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebarQuotaTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarQuotaNumbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memberRatio {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.memberRatioFull {
+  color: #6b7280;
+}
+
+/* 2. 작성자 화면: 상단 와이드 배너 카드 */
+.bannerCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+}
+
+.bannerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.bannerTitleArea {
+  flex: 1;
+  min-width: 260px;
+}
+
+.bannerBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.recruitSummaryBadge {
+  background-color: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.bannerTitle {
+  font-size: 21px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.bannerMeta {
+  font-size: 13.5px;
+  color: #6b7280;
+}
+
+.statBoxGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.statBox {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 110px;
+}
+
+.statLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.statCount {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.statBoxAccent {
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 110px;
+}
+
+.statLabelAccent {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4338ca;
+  margin-bottom: 4px;
+}
+
+.statCountAccent {
+  font-size: 20px;
+  font-weight: 800;
+  color: #312e81;
+}
+
+.bannerQuotaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 18px;
+}
+
+.bannerQuotaCard {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bannerQuotaCardFull {
+  background-color: #f3f4f6;
+  opacity: 0.85;
+}
+
+.bannerQuotaTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stateBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.stateOpen {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.stateFull {
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.bannerQuotaBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bannerQuotaCount {
+  font-size: 14px;
+  color: #374151;
+}
+
+.bannerQuotaCount strong {
+  font-size: 18px;
+  color: #2563eb;
+}
