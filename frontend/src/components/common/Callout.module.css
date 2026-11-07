@@ -1,0 +1,84 @@
+.callout {
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.title {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.body {
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+/* Variants */
+.neutral {
+  background-color: #f9fafb;
+  border: 1px solid transparent;
+}
+
+.neutral .title {
+  color: #6b7280;
+}
+
+.neutral .body {
+  color: #1f2937;
+}
+
+.neutralBordered {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.neutralBordered .title {
+  color: #4b5563;
+}
+
+.neutralBordered .body {
+  color: #374151;
+}
+
+.revision {
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.revision .title {
+  color: #4338ca;
+}
+
+.revision .body {
+  color: #1e1b4b;
+}
+
+.rejected {
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+}
+
+.rejected .title {
+  color: #be123c;
+}
+
+.rejected .body {
+  color: #881337;
+}
+
+.danger {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.danger .title {
+  color: #b91c1c;
+}
+
+.danger .body {
+  color: #b91c1c;
+  font-weight: 600;
+}
