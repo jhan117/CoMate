@@ -10,3 +10,69 @@
   margin: 0 0 16px;
   font-size: 20px;
 }
+
+.crudHeading,
+.crudRow,
+.crudActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.crudHeading {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crudRow {
+  align-items: end;
+  margin: 12px 0;
+}
+
+.crudGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  align-items: start;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.crudActions {
+  align-items: center;
+  margin-top: 12px;
+}
+
+.crudForm {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #dce1e9;
+  border-radius: 12px;
+}
+
+.crudFields {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.crudRow label,
+.crudFields label {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.crudRow input,
+.crudRow select,
+.crudFields input,
+.crudFields textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 8px;
+  border: 1px solid #dce1e9;
+  border-radius: 8px;
+  font: inherit;
+}
