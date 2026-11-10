@@ -1,0 +1,85 @@
+.pageWrapper {
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 24px 48px;
+}
+
+.loadingText {
+  text-align: center;
+  padding: 48px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.topBarLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.breadcrumb {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.applicantLayout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .applicantLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.authorLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.applicantList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emptyBox {
+  background-color: #ffffff;
+  border: 1px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.emptySub {
+  font-size: 13.5px;
+  color: #6b7280;
+}

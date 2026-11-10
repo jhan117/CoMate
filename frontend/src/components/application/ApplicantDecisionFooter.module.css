@@ -1,0 +1,55 @@
+.footer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btnGroup {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.feedbackFormBox {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feedbackFormLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.feedbackTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background-color: #ffffff;
+  resize: vertical;
+}
+
+.feedbackTextarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+.feedbackErrorText {
+  font-size: 12.5px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.feedbackFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
