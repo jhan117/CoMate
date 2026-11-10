@@ -8,20 +8,15 @@ import {
 import { NOTIFICATION_EVENTS } from "../constants/notificationConstants";
 
 export function useNotifications(externalUser = null) {
-  const [activeUser, setActiveUser] = useState(externalUser);
+  const [internalUser, setInternalUser] = useState(null);
+  const activeUser = externalUser !== null ? externalUser : internalUser;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (externalUser !== null) {
-      setActiveUser(externalUser);
-    }
-  }, [externalUser]);
-
-  useEffect(() => {
     const handleUserChanged = (e) => {
-      setActiveUser(e.detail || null);
+      setInternalUser(e.detail || null);
     };
 
     window.addEventListener(
@@ -33,10 +28,10 @@ export function useNotifications(externalUser = null) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.user) {
-          setActiveUser((prev) => prev || data.user);
+          setInternalUser((prev) => prev || data.user);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       window.removeEventListener(
@@ -68,8 +63,31 @@ export function useNotifications(externalUser = null) {
   }, [userId]);
 
   useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    let active = true;
+
+    if (!userId) {
+      return;
+    }
+
+    setLoading(true);
+    fetchNotifications(userId)
+      .then((data) => {
+        if (active) {
+          setNotifications(data.notifications || []);
+          setUnreadCount(data.unreadCount ?? 0);
+        }
+      })
+      .catch((err) => {
+        if (active) console.error("알림 조회 실패:", err);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   useEffect(() => {
     const handleUpdated = () => {
@@ -123,9 +141,9 @@ export function useNotifications(externalUser = null) {
 
   return {
     activeUser,
-    notifications,
-    unreadCount,
-    loading,
+    notifications: userId ? notifications : [],
+    unreadCount: userId ? unreadCount : 0,
+    loading: userId ? loading : false,
     actions: {
       refresh: loadNotifications,
       markAsRead,
