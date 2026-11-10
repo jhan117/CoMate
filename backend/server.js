@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const applicationsRouter = require('./routes/applications');
+const notificationsRouter = require('./routes/notifications');
 const postsRouter = require('./routes/posts');
 const session = require('express-session');
 const authRouter = require('./routes/auth');
@@ -38,6 +39,7 @@ app.use(session({
 app.use('/api/auth', authRouter);
 
 app.use('/api/applications', applicationsRouter);
+app.use('/api/notifications', notificationsRouter);
 app.use('/api/posts', postsRouter);
 
 app.listen(PORT, () => {

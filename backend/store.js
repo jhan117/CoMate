@@ -17,7 +17,7 @@ const store = {
       departments: [
         { deptName: '컴퓨터공학과', currentMembers: 0, maxMembers: 3 },
         { deptName: '디자인학과', currentMembers: 0, maxMembers: 2 },
-        { deptName: '학과 무관', currentMembers: 0, maxMembers: 2 },
+        { deptName: '학과 무관', currentMembers: 0, maxMembers: 1 },
       ],
       deadline: '2026-11-30',
     },
@@ -72,7 +72,32 @@ const store = {
       createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
     },
   ],
-  notifications: [],
+  notifications: [
+    {
+      id: 'noti-1',
+      recipientId: 'user1',
+      postId: '1',
+      applicationId: 'app-1',
+      type: 'application_new',
+      title: '신규 지원서 접수',
+      message:
+        "[2026 대학생 AI 서비스 해커톤 팀원 모집] '박준혁' 님이 '학과 무관' 부문에 지원했습니다.",
+      isRead: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+    },
+    {
+      id: 'noti-2',
+      recipientId: 'user1',
+      postId: '1',
+      applicationId: 'app-2',
+      type: 'application_new',
+      title: '신규 지원서 접수',
+      message:
+        "[2026 대학생 AI 서비스 해커톤 팀원 모집] '김희서' 님이 '컴퓨터공학과' 부문에 지원했습니다.",
+      isRead: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+    },
+  ],
 };
 
 module.exports = store;
