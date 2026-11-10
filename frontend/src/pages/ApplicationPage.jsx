@@ -4,7 +4,7 @@ import ApplicationForm from "../components/application/ApplicationForm";
 import SubmittedApplicationCard from "../components/application/SubmittedApplicationCard";
 import ApplicantFilterBar from "../components/application/ApplicantFilterBar";
 import ApplicantCard from "../components/application/ApplicantCard";
-import DevRoleToggle from "../components/application/DevRoleToggle";
+import Callout from "../components/common/Callout";
 import { usePostApplication } from "../hooks/usePostApplication";
 import { isDeptFull } from "../utils/applicationUtils";
 import styles from "./ApplicationPage.module.css";
@@ -15,23 +15,11 @@ function ApplicationPage({ postId }) {
     applications,
     currentUser,
     isAuthor,
-    isAuthorMode,
-    setIsAuthorMode,
     existingApp,
     showApplicationForm,
     loading,
-    submitting,
-    canceling,
-    processingId,
-    statusFilter,
-    setStatusFilter,
-    deptFilter,
-    setDeptFilter,
-    counts,
-    filteredApps,
-    handleSubmitOrResubmit,
-    handleCancelApplication,
-    handleDecision,
+    filters,
+    actions,
   } = usePostApplication(postId);
 
   if (loading) {
@@ -65,15 +53,20 @@ function ApplicationPage({ postId }) {
               </strong>
             </span>
           </div>
-
-          {/* 추후 로그인 병합 시 아래 DevRoleToggle 1줄만 제거 */}
-          <DevRoleToggle
-            isAuthorMode={isAuthorMode}
-            onToggleRole={setIsAuthorMode}
-          />
         </div>
 
-        {!isAuthor ? (
+        {!currentUser ? (
+          <div className={styles.loginRequiredCard}>
+            <Callout variant="neutralBordered" title="로그인이 필요한 서비스입니다">
+              지원서를 제출하거나 지원 현황을 확인하려면 먼저 로그인해 주세요.
+            </Callout>
+            <div style={{ marginTop: "16px" }}>
+              <Button as="a" href="/" variant="primary" size="md">
+                메인 화면으로 이동하여 로그인하기
+              </Button>
+            </div>
+          </div>
+        ) : !isAuthor ? (
           <div className={styles.applicantLayout}>
             <PostSummaryCard
               post={post}
@@ -85,16 +78,16 @@ function ApplicationPage({ postId }) {
                 post={post}
                 currentUser={currentUser}
                 existingApplication={existingApp}
-                submitting={submitting}
-                canceling={canceling}
-                onSubmit={handleSubmitOrResubmit}
-                onCancel={handleCancelApplication}
+                submitting={actions.submitting}
+                canceling={actions.canceling}
+                onSubmit={actions.submit}
+                onCancel={actions.cancel}
               />
             ) : (
               <SubmittedApplicationCard
                 application={existingApp}
-                canceling={canceling}
-                onCancel={handleCancelApplication}
+                canceling={actions.canceling}
+                onCancel={actions.cancel}
               />
             )}
           </div>
@@ -107,15 +100,15 @@ function ApplicationPage({ postId }) {
             />
 
             <ApplicantFilterBar
-              counts={counts}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              deptFilter={deptFilter}
-              onDeptFilterChange={setDeptFilter}
+              counts={filters.counts}
+              statusFilter={filters.status}
+              onStatusFilterChange={filters.setStatus}
+              deptFilter={filters.dept}
+              onDeptFilterChange={filters.setDept}
               departments={post.departments}
             />
 
-            {filteredApps.length === 0 ? (
+            {filters.list.length === 0 ? (
               <div className={styles.emptyBox}>
                 <p className={styles.emptyTitle}>
                   해당 조건의 지원자가 없습니다.
@@ -126,7 +119,7 @@ function ApplicationPage({ postId }) {
               </div>
             ) : (
               <div className={styles.applicantList}>
-                {filteredApps.map((app) => {
+                {filters.list.map((app) => {
                   const targetDeptObj = post.departments.find(
                     (d) => d.deptName === app.targetDept
                   );
@@ -137,8 +130,8 @@ function ApplicationPage({ postId }) {
                       key={app.id}
                       application={app}
                       isTargetDeptFull={isTargetDeptFull}
-                      processing={processingId === app.id}
-                      onDecision={handleDecision}
+                      processing={actions.processingId === app.id}
+                      onDecision={actions.decide}
                     />
                   );
                 })}

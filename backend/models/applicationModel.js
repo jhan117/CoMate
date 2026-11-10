@@ -61,19 +61,6 @@ const applicationModel = {
     };
   },
 
-  // 임시
-  findTestRoleUsers(post) {
-    if (!post) return { authorUser: null, applicantUser: null };
-
-    const authorUser = this.findUserById(post.authorId);
-    const nonAuthor =
-      store.users.find((u) => u.id === 'kaye' && u.id !== post.authorId) ||
-      store.users.find((u) => u.id !== post.authorId);
-    const applicantUser = nonAuthor ? this.findUserById(nonAuthor.id) : null;
-
-    return { authorUser, applicantUser };
-  },
-
   create({ postId, user, targetDept, message }) {
     const newApplication = {
       id: `app-${Date.now()}`,
@@ -125,6 +112,27 @@ const applicationModel = {
 
     dept.currentMembers += 1;
     return { post: this.attachAuthor(post), dept };
+  },
+
+  autoRejectPendingByDept(postId, deptName, excludeApplicationId, feedback) {
+    const now = new Date().toISOString();
+    const autoRejected = [];
+
+    store.applications.forEach((app) => {
+      if (
+        app.postId === String(postId) &&
+        app.targetDept === deptName &&
+        app.id !== String(excludeApplicationId) &&
+        app.status === 'pending'
+      ) {
+        app.status = 'rejected';
+        app.feedback = String(feedback).trim();
+        app.processedAt = now;
+        autoRejected.push(this.attachApplicant(app));
+      }
+    });
+
+    return autoRejected;
   },
 
   removeById(id) {

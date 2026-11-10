@@ -1,3 +1,5 @@
+import { emitActiveUserChanged } from '../constants/notificationConstants';
+
 async function request(path, method = 'GET', fields) {
   const response = await fetch(`/api/auth/${path}`, {
     method,
@@ -5,7 +7,10 @@ async function request(path, method = 'GET', fields) {
     body: fields ? JSON.stringify(fields) : undefined,
   });
 
-  if (response.status === 204) return;
+  if (response.status === 204) {
+    emitActiveUserChanged(null);
+    return;
+  }
 
   const data = await response.json().catch(() => null);
 
@@ -13,6 +18,7 @@ async function request(path, method = 'GET', fields) {
     throw new Error(data?.message ?? `인증 요청에 실패했습니다. (${response.status})`);
   }
 
+  emitActiveUserChanged(data.user ?? null);
   return data.user;
 }
 
