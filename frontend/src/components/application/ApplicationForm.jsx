@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../common/Button";
 import Callout from "../common/Callout";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
@@ -30,17 +30,6 @@ function ApplicationForm({
     isRevisionMode ? existingApplication.message : ""
   );
   const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    if (isRevisionMode) {
-      setTargetDept(existingApplication.targetDept);
-      setMessage(existingApplication.message);
-    } else {
-      setTargetDept(firstAvailable);
-      setMessage("");
-    }
-    setErrorMsg("");
-  }, [post.id, firstAvailable, isRevisionMode, existingApplication]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -15,7 +15,9 @@ import {
 export function usePostApplication(postId, externalUser = null) {
   const [post, setPost] = useState(null);
   const [applications, setApplications] = useState([]);
-  const [currentUser, setCurrentUser] = useState(externalUser || null);
+  const [sessionUser, setSessionUser] = useState(null);
+
+  const currentUser = externalUser !== null ? externalUser : sessionUser;
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +35,7 @@ export function usePostApplication(postId, externalUser = null) {
         setPost(data.post);
         setApplications(data.applications);
         if (data.sessionUser) {
-          setCurrentUser(data.sessionUser);
+          setSessionUser(data.sessionUser);
           emitActiveUserChanged(data.sessionUser);
         }
       } catch (err) {
@@ -45,12 +47,6 @@ export function usePostApplication(postId, externalUser = null) {
 
     loadPageData();
   }, [postId]);
-
-  useEffect(() => {
-    if (externalUser !== null) {
-      setCurrentUser(externalUser);
-    }
-  }, [externalUser]);
 
   const isAuthor = Boolean(post && currentUser && currentUser.id === post.authorId);
 

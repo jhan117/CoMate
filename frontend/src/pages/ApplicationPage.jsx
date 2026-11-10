@@ -75,6 +75,7 @@ function ApplicationPage({ postId }) {
             />
             {showApplicationForm ? (
               <ApplicationForm
+                key={`${post.id}-${existingApp?.id ?? "new"}-${existingApp?.status ?? ""}`}
                 post={post}
                 currentUser={currentUser}
                 existingApplication={existingApp}

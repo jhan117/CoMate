@@ -7,11 +7,19 @@ const session = require('express-session');
 const authRouter = require('./routes/auth');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
+
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.set('trust proxy', 1);
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -31,10 +39,15 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+    secure: isProduction,
     maxAge: 8 * 60 * 60 * 1000,
   },
 }));
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 app.use('/api/auth', authRouter);
 
