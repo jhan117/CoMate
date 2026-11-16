@@ -1,0 +1,51 @@
+
+.crudForm {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #dce1e9;
+  border-radius: 12px;
+}
+
+.crudFields {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.crudRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin: 12px 0;
+}
+
+.crudActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.crudRow label,
+.crudFields label {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.crudRow input,
+.crudRow select,
+.crudFields input,
+.crudFields textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 8px;
+  border: 1px solid #dce1e9;
+  border-radius: 8px;
+  font: inherit;
+}

@@ -1,7 +1,8 @@
 import NotificationBell from "./notification/NotificationBell";
 import styles from "./Header.module.css";
+import AuthBar from "./AuthBar";
 
-function Header() {
+function Header({ user, onUserChange, authLoading }) {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -16,6 +17,11 @@ function Header() {
 
         <div className={styles.rightActions}>
           <NotificationBell />
+          <AuthBar
+            user={user}
+            onUserChange={onUserChange}
+            authLoading={authLoading}
+          />
         </div>
       </div>
     </header>

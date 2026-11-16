@@ -28,13 +28,21 @@ app.use(express.urlencoded({ extended: true }));
 
 const sessionSecret = process.env.COMATE_SESSION_SECRET;
 
-if (!sessionSecret) {
-  throw new Error('COMATE_SESSION_SECRET 환경 변수를 설정해 주세요.');
+if (isProduction && !sessionSecret) {
+  throw new Error(
+    '배포 환경에서는 COMATE_SESSION_SECRET 환경 변수를 설정해야 합니다.'
+  );
+}
+
+if (!isProduction && !sessionSecret) {
+  console.warn(
+    '개발 환경: COMATE_SESSION_SECRET이 설정되지 않아 임시 세션 키를 사용합니다.'
+  );
 }
 
 app.use(session({
   name: 'comate.sid',
-  secret: sessionSecret,
+  secret: sessionSecret || 'comate-local-development-only-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {

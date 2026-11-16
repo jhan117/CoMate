@@ -1,6 +1,6 @@
+import { useLayoutEffect, useRef } from 'react'
 import Button from './common/Button'
-import card from './application/PostSummaryCard.module.css'
-import styles from './Body.module.css'
+import card from './PostCard.module.css'
 
 function deadlineLabel(deadline) {
   const today = new Intl.DateTimeFormat('sv-SE', {
@@ -13,8 +13,43 @@ function deadlineLabel(deadline) {
 }
 
 export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
+  const detailUrl = `/posts/${encodeURIComponent(post.id)}/application`
+    const cardRef = useRef(null)
+
+  useLayoutEffect(() => {
+    const element = cardRef.current
+    if (!element) return
+
+    const updateHeight = () => {
+      const grid = element.parentElement
+      if (!grid) return
+
+      const styles = window.getComputedStyle(grid)
+      const rowHeight = parseFloat(styles.gridAutoRows)
+      const rowGap = parseFloat(styles.rowGap)
+
+      if (!rowHeight || !Number.isFinite(rowGap)) return
+
+      const height = element.getBoundingClientRect().height
+      const span = Math.ceil((height + rowGap) / (rowHeight + rowGap))
+
+      element.style.gridRowEnd = `span ${span}`
+    }
+
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(element)
+    updateHeight()
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <article className={card.sidebarCard}>
+    <article ref={cardRef} className={card.sidebarCard}>
+      <a
+        href={detailUrl}
+        className={card.cardLink}
+        aria-label={`${post.title} 지원 페이지 보기`}
+      />
       <div className={card.sidebarBadgeRow}>
         <span className={card.categoryBadge}>{post.category}</span>
         <time className={card.deadlineText} dateTime={post.deadline}>
@@ -36,10 +71,7 @@ export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
         ))}
       </ul>
 
-      <div className={styles.crudActions}>
-        <Button as="a" href={`/posts/${encodeURIComponent(post.id)}/application`} size="sm">
-          지원 페이지
-        </Button>
+      <div className={card.cardActions}>
         {canEdit && (
           <>
             <Button size="sm" disabled={busy} onClick={onEdit}>수정</Button>

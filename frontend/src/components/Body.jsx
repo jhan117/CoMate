@@ -1,17 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { deletePost, fetchPosts, savePost } from '../api/postApi'
-import AuthBar from './AuthBar'
 import Button from './common/Button'
 import Callout from './common/Callout'
 import PostCard from './PostCard'
+import PostFilters from './PostFilters'
 import PostForm from './PostForm'
 import styles from './Body.module.css'
 
 const baseCategories = ['대회', '공모전', '해커톤', '팀플', '스터디']
 
-export default function Body() {
+export default function Body({ user, authLoading }) {
   const [posts, setPosts] = useState([])
-  const [user, setUser] = useState(null)
   const userId = user?.id
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
@@ -38,11 +37,10 @@ export default function Body() {
   return () => { active = false }
 }, [])
 
-const changeUser = useCallback((nextUser) => {
-  setUser(nextUser)
+useEffect(() => {
   setEditor(null)
   setError('')
-}, [])
+}, [userId])
 
   const categories = [...new Set([...baseCategories, ...posts.map((post) => post.category)])]
   const departments = [...new Set(
@@ -102,37 +100,25 @@ const changeUser = useCallback((nextUser) => {
 
   return (
     <main className={styles.body}>
-      <AuthBar user={user} onUserChange={changeUser} disabled={busy} />
       <div className={styles.crudHeading}>
         <h2 className={styles.title}>팀원 모집 게시판</h2>
-        {userId && (
+        {!authLoading && userId && (
           <Button variant="primary" disabled={busy} onClick={() => openEditor({})}>
             + 모집글 작성
           </Button>
         )}
       </div>
 
-      <div className={styles.crudRow}>
-        <label>
-          제목·내용 검색
-          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
-        </label>
-        <label>
-          분류
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="">전체</option>
-            {categories.map((value) => <option key={value}>{value}</option>)}
-          </select>
-        </label>
-        <label>
-          모집 학과
-          <select value={department} onChange={(e) => setDepartment(e.target.value)}>
-            <option value="">전체</option>
-            {departments.map((value) => <option key={value}>{value}</option>)}
-          </select>
-        </label>
-        
-      </div>
+      <PostFilters
+        query={query}
+        onQueryChange={setQuery}
+        category={category}
+        onCategoryChange={setCategory}
+        department={department}
+        onDepartmentChange={setDepartment}
+        categories={categories}
+        departments={departments}
+      />
 
       {error && <div role="alert"><Callout variant="danger">{error}</Callout></div>}
       {editor && (

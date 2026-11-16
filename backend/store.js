@@ -2,7 +2,7 @@ const store = {
   users: [
     { id: 'user1', password: '123', studentId: '24100412', name: '이서연', dept: '디자인학과' },
     { id: 'user2', password: '123', studentId: '24100815', name: '박준혁', dept: '경영학과' },
-    { id: 'ella', password: '123', studentId: '26000000', name: '김희서', dept: '컴퓨터공학과' },
+    { id: 'ella', password: '123', studentId: '26110093', name: '김희서', dept: '컴퓨터공학과' },
     { id: 'kaye', password: '123', studentId: '26110091', name: '권기영', dept: '컴퓨터공학과' },
   ],
   posts: [

@@ -37,9 +37,12 @@ async function create({ studentId, name, dept, password }) {
 }
 
 async function verifyPassword(user, password) {
-  if (!user.passwordHash) {
-    return user.password === password;
-  }
+  if (!user.passwordHash || !user.passwordSalt) {
+    return process.env.NODE_ENV !== 'production' &&
+      !process.env.RENDER &&
+      typeof user.password === 'string' &&
+      user.password === password;
+    }
 
   const expected = Buffer.from(user.passwordHash, 'hex');
   const actual = await deriveKey(password, user.passwordSalt, expected.length);
