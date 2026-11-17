@@ -200,6 +200,26 @@
   color: #6b7280;
 }
 
+.contentToggleBtn {
+  margin-top: 10px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4f46e5;
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.contentToggleBtn:hover {
+  background-color: #e0e7ff;
+}
+
+.bannerContentBox {
+  margin-bottom: 18px;
+}
+
 .statBoxGroup {
   display: flex;
   gap: 10px;

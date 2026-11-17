@@ -19,6 +19,7 @@ export const NOTIFICATION_TYPE_LABELS = {
 export const NOTIFICATION_EVENTS = {
   ACTIVE_USER_CHANGED: "comate:active-user-changed",
   NOTIFICATIONS_UPDATED: "comate:notifications-updated",
+  APPLICATION_PAGE_REFRESH: "comate:application-page-refresh",
 };
 
 export function emitActiveUserChanged(user) {
@@ -30,5 +31,11 @@ export function emitActiveUserChanged(user) {
 export function emitNotificationsUpdated() {
   window.dispatchEvent(
     new CustomEvent(NOTIFICATION_EVENTS.NOTIFICATIONS_UPDATED)
+  );
+}
+
+export function emitApplicationPageRefresh(detail = null) {
+  window.dispatchEvent(
+    new CustomEvent(NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH, { detail })
   );
 }

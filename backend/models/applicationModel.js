@@ -1,12 +1,25 @@
 const store = require('../store');
 
 const applicationModel = {
-  // users 테이블(배열)과 JOIN 역할: 게시글에 작성자 이름 연결
+  // users 테이블(배열)과 JOIN 역할: 게시글에 작성자 이름 및 지원 집계 연결
   attachAuthor(post) {
     if (!post) return null;
     const authorUser = this.findUserById(post.authorId);
+    const postApps = store.applications.filter(
+      (app) => app.postId === String(post.id)
+    );
+    const departments = Array.isArray(post.departments)
+      ? post.departments.map((dept) => ({
+          ...dept,
+          applicantCount: postApps.filter((a) => a.targetDept === dept.deptName)
+            .length,
+        }))
+      : [];
+
     return {
       ...post,
+      departments,
+      totalApplicants: postApps.length,
       author: authorUser ? authorUser.name : '알 수 없음',
     };
   },
@@ -45,6 +58,41 @@ const applicationModel = {
     return this.attachApplicant(app);
   },
 
+  findPostsByAuthorId(authorId) {
+    return store.posts
+      .filter((p) => p.authorId === String(authorId))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((post) => {
+        const postApps = store.applications.filter(
+          (app) => app.postId === String(post.id)
+        );
+        return {
+          ...this.attachAuthor(post),
+          totalApplicants: postApps.length,
+          pendingCount: postApps.filter((a) => a.status === 'pending').length,
+          revisionCount: postApps.filter(
+            (a) => a.status === 'revision_requested'
+          ).length,
+          approvedCount: postApps.filter((a) => a.status === 'approved').length,
+        };
+      });
+  },
+
+  findByApplicantId(applicantId) {
+    return store.applications
+      .filter((app) => app.applicantId === String(applicantId))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((app) => {
+        const post = store.posts.find((p) => p.id === String(app.postId));
+        return {
+          ...this.attachApplicant(app),
+          postTitle: post ? post.title : '삭제된 모집글',
+          postCategory: post ? post.category : '',
+          postDeadline: post ? post.deadline : '',
+        };
+      });
+  },
+
   findPostById(postId) {
     const post = store.posts.find((p) => p.id === String(postId)) || null;
     return this.attachAuthor(post);
@@ -81,10 +129,14 @@ const applicationModel = {
     const application = store.applications.find((app) => app.id === String(id));
     if (!application) return null;
 
+    if (application.feedback) {
+      application.previousFeedback = application.feedback;
+    }
     application.targetDept = targetDept;
     application.message = String(message).trim();
     application.status = 'pending';
     application.feedback = '';
+    application.isResubmitted = true;
     application.updatedAt = new Date().toISOString();
     return this.attachApplicant(application);
   },
@@ -123,7 +175,7 @@ const applicationModel = {
         app.postId === String(postId) &&
         app.targetDept === deptName &&
         app.id !== String(excludeApplicationId) &&
-        app.status === 'pending'
+        (app.status === 'pending' || app.status === 'revision_requested')
       ) {
         app.status = 'rejected';
         app.feedback = String(feedback).trim();

@@ -10,17 +10,20 @@ function ApplicantDecisionFooter({
   processing,
   onDecision,
 }) {
-  // null | 'revision_requested' | 'rejected'
+  // null | 'approved' | 'revision_requested' | 'rejected'
   const [feedbackMode, setFeedbackMode] = useState(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
 
+  const isApprovedMode = feedbackMode === APPLICATION_STATUS.APPROVED;
   const isRevisionMode = feedbackMode === APPLICATION_STATUS.REVISION_REQUESTED;
   const isRejectedMode = feedbackMode === APPLICATION_STATUS.REJECTED;
 
   const openFeedbackBox = (mode) => {
     setFeedbackMode(mode);
-    setFeedbackText(application.feedback || "");
+    setFeedbackText(
+      mode === APPLICATION_STATUS.APPROVED ? "" : application.feedback || ""
+    );
     setFeedbackError("");
   };
 
@@ -31,6 +34,12 @@ function ApplicantDecisionFooter({
   };
 
   const handleConfirmFeedback = async () => {
+    if (isApprovedMode) {
+      await onDecision(application, APPLICATION_STATUS.APPROVED, "");
+      closeFeedbackBox();
+      return;
+    }
+
     if (!feedbackText.trim()) {
       setFeedbackError(
         isRevisionMode
@@ -47,28 +56,38 @@ function ApplicantDecisionFooter({
     <div className={styles.footer}>
       {feedbackMode ? (
         <div className={styles.feedbackFormBox}>
+          {isApprovedMode && (
+            <Callout variant="success" title="팀원 승인 확인">
+              {`'${application.applicantName}' 님을 '${application.targetDept}' 부문 팀원으로 승인하시겠습니까? 승인 완료 시 해당 부문 모집 인원이 1명 증가하며 되돌릴 수 없습니다.`}
+            </Callout>
+          )}
+
           {isRejectedMode && (
             <Callout variant="danger">
               거절 처리 시 해당 지원자는 이 모집글에 다시 지원할 수 없습니다. 내용 보충이나 추가 확인이 필요한 경우 보완 요청을 이용해 주세요.
             </Callout>
           )}
 
-          <label className={styles.feedbackFormLabel}>
-            {isRevisionMode ? "보완 요청 내용" : "거절 사유"}
-          </label>
-          <textarea
-            rows={3}
-            className={styles.feedbackTextarea}
-            placeholder={
-              isRevisionMode
-                ? "지원자에게 추가로 확인하거나 보충을 요청할 내용을 작성해 주세요"
-                : "지원자에게 전달할 거절 사유를 작성해 주세요"
-            }
-            value={feedbackText}
-            onChange={(e) => setFeedbackText(e.target.value)}
-          />
-          {feedbackError && (
-            <p className={styles.feedbackErrorText}>{feedbackError}</p>
+          {!isApprovedMode && (
+            <>
+              <label className={styles.feedbackFormLabel}>
+                {isRevisionMode ? "보완 요청 내용" : "거절 사유"}
+              </label>
+              <textarea
+                rows={3}
+                className={styles.feedbackTextarea}
+                placeholder={
+                  isRevisionMode
+                    ? "지원자에게 추가로 확인하거나 보충을 요청할 내용을 작성해 주세요"
+                    : "지원자에게 전달할 거절 사유를 작성해 주세요"
+                }
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+              />
+              {feedbackError && (
+                <p className={styles.feedbackErrorText}>{feedbackError}</p>
+              )}
+            </>
           )}
 
           <div className={styles.feedbackFormActions}>
@@ -81,12 +100,22 @@ function ApplicantDecisionFooter({
               취소
             </Button>
             <Button
-              variant={isRejectedMode ? "dangerSolid" : "revisionSolid"}
+              variant={
+                isApprovedMode
+                  ? "approve"
+                  : isRejectedMode
+                  ? "dangerSolid"
+                  : "revisionSolid"
+              }
               size="sm"
               disabled={processing}
               onClick={handleConfirmFeedback}
             >
-              {isRevisionMode ? "보완 요청 전달" : "거절 확정"}
+              {isApprovedMode
+                ? "승인 확정"
+                : isRevisionMode
+                ? "보완 요청 전달"
+                : "거절 확정"}
             </Button>
           </div>
         </div>
@@ -114,9 +143,7 @@ function ApplicantDecisionFooter({
             variant="approve"
             size="md"
             disabled={processing || isTargetDeptFull}
-            onClick={() =>
-              onDecision(application, APPLICATION_STATUS.APPROVED, "")
-            }
+            onClick={() => openFeedbackBox(APPLICATION_STATUS.APPROVED)}
           >
             승인
           </Button>

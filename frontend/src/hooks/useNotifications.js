@@ -13,38 +13,75 @@ export function useNotifications(externalUser = null) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const syncSessionUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const nextUser = data?.user || null;
+      setInternalUser((prev) => {
+        if (prev?.id === nextUser?.id) return prev;
+        return nextUser;
+      });
+      return nextUser;
+    } catch {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     const handleUserChanged = (e) => {
       setInternalUser(e.detail || null);
+      setError("");
+    };
+
+    const handleAuthSectionInteraction = (e) => {
+      if (e.target?.closest?.('[aria-label="회원 인증"]')) {
+        window.setTimeout(() => {
+          syncSessionUser();
+        }, 250);
+        window.setTimeout(() => {
+          syncSessionUser();
+        }, 700);
+      }
     };
 
     window.addEventListener(
       NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
       handleUserChanged
     );
+    document.addEventListener("submit", handleAuthSectionInteraction);
+    document.addEventListener("click", handleAuthSectionInteraction);
 
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.user) {
-          setInternalUser((prev) => prev || data.user);
-        }
+        const nextUser = data?.user || null;
+        setInternalUser((prev) => (prev?.id === nextUser?.id ? prev : nextUser));
       })
-      .catch(() => { });
+      .catch(() => {});
 
     return () => {
       window.removeEventListener(
         NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
         handleUserChanged
       );
+      document.removeEventListener("submit", handleAuthSectionInteraction);
+      document.removeEventListener("click", handleAuthSectionInteraction);
     };
-  }, []);
+  }, [syncSessionUser]);
 
   const userId = activeUser?.id;
 
   const loadNotifications = useCallback(async () => {
-    if (!userId) {
+    setError("");
+    const currentSessionUser =
+      externalUser !== null ? externalUser : await syncSessionUser();
+    const targetUserId = currentSessionUser?.id || userId;
+
+    if (!targetUserId) {
       setNotifications([]);
       setUnreadCount(0);
       return;
@@ -52,15 +89,21 @@ export function useNotifications(externalUser = null) {
 
     try {
       setLoading(true);
-      const data = await fetchNotifications(userId);
+      const data = await fetchNotifications();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount ?? 0);
     } catch (err) {
-      console.error("알림 조회 실패:", err);
+      if (err.status === 401) {
+        setInternalUser(null);
+        setNotifications([]);
+        setUnreadCount(0);
+      } else {
+        setError(err.message || "알림 목록을 불러오지 못했습니다.");
+      }
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [externalUser, syncSessionUser, userId]);
 
   useEffect(() => {
     let active = true;
@@ -69,20 +112,22 @@ export function useNotifications(externalUser = null) {
       return;
     }
 
-    setLoading(true);
-    fetchNotifications(userId)
-      .then((data) => {
+    const fetchInitialNotifications = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchNotifications();
         if (active) {
           setNotifications(data.notifications || []);
           setUnreadCount(data.unreadCount ?? 0);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (active) console.error("알림 조회 실패:", err);
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    };
+
+    fetchInitialNotifications();
 
     return () => {
       active = false;
@@ -107,6 +152,7 @@ export function useNotifications(externalUser = null) {
   }, [loadNotifications]);
 
   const markAsRead = async (notificationId) => {
+    setError("");
     try {
       const data = await markNotificationAsRead(notificationId);
       setNotifications((prev) =>
@@ -114,28 +160,30 @@ export function useNotifications(externalUser = null) {
       );
       setUnreadCount(data.unreadCount);
     } catch (err) {
-      console.error("알림 읽음 처리 오류:", err);
+      setError(err.message || "알림 읽음 처리에 실패했습니다.");
     }
   };
 
   const markAllAsRead = async () => {
     if (!userId) return;
+    setError("");
     try {
-      const data = await markAllNotificationsAsRead(userId);
+      const data = await markAllNotificationsAsRead();
       setNotifications(data.notifications || []);
       setUnreadCount(0);
     } catch (err) {
-      console.error("전체 읽음 처리 오류:", err);
+      setError(err.message || "전체 읽음 처리에 실패했습니다.");
     }
   };
 
   const removeNotification = async (notificationId) => {
+    setError("");
     try {
       const data = await deleteNotification(notificationId);
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       setUnreadCount(data.unreadCount);
     } catch (err) {
-      console.error("알림 삭제 오류:", err);
+      setError(err.message || "알림 삭제에 실패했습니다.");
     }
   };
 
@@ -144,6 +192,7 @@ export function useNotifications(externalUser = null) {
     notifications: userId ? notifications : [],
     unreadCount: userId ? unreadCount : 0,
     loading: userId ? loading : false,
+    error,
     actions: {
       refresh: loadNotifications,
       markAsRead,

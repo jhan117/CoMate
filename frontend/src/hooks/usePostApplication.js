@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   fetchPostApplicationData,
   createApplication,
@@ -8,6 +8,7 @@ import {
 } from "../api/applicationApi";
 import { APPLICATION_STATUS } from "../constants/applicationConstants";
 import {
+  NOTIFICATION_EVENTS,
   emitActiveUserChanged,
   emitNotificationsUpdated,
 } from "../constants/notificationConstants";
@@ -20,18 +21,105 @@ export function usePostApplication(postId, externalUser = null) {
   const currentUser = externalUser !== null ? externalUser : sessionUser;
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [errorStatus, setErrorStatus] = useState(null);
+  const [feedbackBanner, setFeedbackBanner] = useState(null);
+  const [isEditingRevision, setIsEditingRevision] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [processingId, setProcessingId] = useState(null);
+  const [highlightedAppId, setHighlightedAppId] = useState(null);
+  const [scrollTrigger, setScrollTrigger] = useState(0);
 
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [deptFilter, setDeptFilter] = useState("all");
+  const filterStorageKey = `comate:app-filter:${postId}`;
+
+  const [statusFilter, setStatusFilterState] = useState(() => {
+    try {
+      const saved = JSON.parse(
+        window.sessionStorage.getItem(filterStorageKey) || "{}"
+      );
+      return saved.status || "all";
+    } catch {
+      return "all";
+    }
+  });
+  const [deptFilter, setDeptFilterState] = useState(() => {
+    try {
+      const saved = JSON.parse(
+        window.sessionStorage.getItem(filterStorageKey) || "{}"
+      );
+      return saved.dept || "all";
+    } catch {
+      return "all";
+    }
+  });
+
+  const setStatusFilter = useCallback(
+    (nextStatus) => {
+      setStatusFilterState(nextStatus);
+      try {
+        const prev = JSON.parse(
+          window.sessionStorage.getItem(filterStorageKey) || "{}"
+        );
+        window.sessionStorage.setItem(
+          filterStorageKey,
+          JSON.stringify({ ...prev, status: nextStatus })
+        );
+      } catch {
+        // ignore storage errors
+      }
+    },
+    [filterStorageKey]
+  );
+
+  const setDeptFilter = useCallback(
+    (nextDept) => {
+      setDeptFilterState(nextDept);
+      try {
+        const prev = JSON.parse(
+          window.sessionStorage.getItem(filterStorageKey) || "{}"
+        );
+        window.sessionStorage.setItem(
+          filterStorageKey,
+          JSON.stringify({ ...prev, dept: nextDept })
+        );
+      } catch {
+        // ignore storage errors
+      }
+    },
+    [filterStorageKey]
+  );
+
+  const loadPageData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setErrorStatus(null);
+      const data = await fetchPostApplicationData(postId);
+      setPost(data.post);
+      setApplications(data.applications);
+      if (data.sessionUser) {
+        setSessionUser(data.sessionUser);
+        emitActiveUserChanged(data.sessionUser);
+      }
+    } catch (err) {
+      setError(err.message || "데이터를 불러오지 못했습니다.");
+      setErrorStatus(err.status || 500);
+    } finally {
+      setLoading(false);
+    }
+  }, [postId]);
 
   useEffect(() => {
-    const loadPageData = async () => {
+    let active = true;
+
+    const initPage = async () => {
       try {
         setLoading(true);
+        setError("");
+        setErrorStatus(null);
         const data = await fetchPostApplicationData(postId);
+        if (!active) return;
         setPost(data.post);
         setApplications(data.applications);
         if (data.sessionUser) {
@@ -39,23 +127,86 @@ export function usePostApplication(postId, externalUser = null) {
           emitActiveUserChanged(data.sessionUser);
         }
       } catch (err) {
-        console.error("데이터 로드 실패:", err);
+        if (!active) return;
+        setError(err.message || "데이터를 불러오지 못했습니다.");
+        setErrorStatus(err.status || 500);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
-    loadPageData();
+    initPage();
+
+    return () => {
+      active = false;
+    };
   }, [postId]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      setScrollTrigger((prev) => prev + 1);
+      loadPageData();
+    };
+
+    window.addEventListener(
+      NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH,
+      handleRefresh
+    );
+    return () => {
+      window.removeEventListener(
+        NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH,
+        handleRefresh
+      );
+    };
+  }, [loadPageData]);
+
   const isAuthor = Boolean(post && currentUser && currentUser.id === post.authorId);
+
+  useEffect(() => {
+    if (loading || !isAuthor || applications.length === 0) return;
+
+    const hash = window.location.hash || "";
+    if (!hash.startsWith("#application-")) return;
+
+    const targetAppId = decodeURIComponent(hash.replace(/^#application-/, ""));
+    const targetApp = applications.find((a) => a.id === targetAppId);
+    if (!targetApp) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      setStatusFilterState((prev) =>
+        prev !== "all" && prev !== targetApp.status ? "all" : prev
+      );
+      setDeptFilterState((prev) =>
+        prev !== "all" && prev !== targetApp.targetDept ? "all" : prev
+      );
+      setHighlightedAppId(targetAppId);
+
+      window.setTimeout(() => {
+        const el = document.getElementById(`application-${targetAppId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 60);
+    }, 50);
+
+    const clearHighlightTimer = window.setTimeout(() => {
+      setHighlightedAppId((prev) => (prev === targetAppId ? null : prev));
+    }, 3500);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearHighlightTimer);
+    };
+  }, [loading, isAuthor, applications, scrollTrigger]);
 
   const existingApp = currentUser
     ? applications.find((app) => app.applicantId === currentUser.id)
     : null;
 
   const showApplicationForm =
-    !existingApp || existingApp.status === APPLICATION_STATUS.REVISION_REQUESTED;
+    !existingApp ||
+    (existingApp.status === APPLICATION_STATUS.REVISION_REQUESTED &&
+      isEditingRevision);
 
   const counts = {
     all: applications.length,
@@ -81,10 +232,14 @@ export function usePostApplication(postId, externalUser = null) {
 
   const submitApplication = async ({ targetDept, message }) => {
     if (!currentUser) {
-      alert("로그인이 필요한 기능입니다.");
+      setFeedbackBanner({
+        type: "error",
+        message: "로그인이 필요한 기능입니다.",
+      });
       return;
     }
     setSubmitting(true);
+    setFeedbackBanner(null);
     try {
       if (
         existingApp &&
@@ -97,14 +252,25 @@ export function usePostApplication(postId, externalUser = null) {
         setApplications((prev) =>
           prev.map((a) => (a.id === data.application.id ? data.application : a))
         );
+        setIsEditingRevision(false);
+        setFeedbackBanner({
+          type: "success",
+          message: data.message || "보완된 지원서가 다시 제출되었습니다.",
+        });
       } else {
         const data = await createApplication({
           postId: post.id,
-          applicantId: currentUser.id,
           targetDept,
           message,
         });
         setApplications((prev) => [data.application, ...prev]);
+        if (data.post) {
+          setPost(data.post);
+        }
+        setFeedbackBanner({
+          type: "success",
+          message: data.message || "지원서가 제출되었습니다.",
+        });
       }
       emitNotificationsUpdated();
     } finally {
@@ -113,27 +279,32 @@ export function usePostApplication(postId, externalUser = null) {
   };
 
   const cancelMyApplication = async (applicationId) => {
-    if (!window.confirm("제출한 지원서를 취소하시겠습니까?")) return;
-
     setCanceling(true);
+    setFeedbackBanner(null);
     try {
-      await cancelApplication(applicationId);
+      const data = await cancelApplication(applicationId);
       setApplications((prev) => prev.filter((a) => a.id !== applicationId));
+      setIsEditingRevision(false);
+      if (data?.post) {
+        setPost(data.post);
+      }
+      setFeedbackBanner({
+        type: "success",
+        message: data?.message || "지원이 취소되었습니다.",
+      });
     } catch (err) {
-      alert(err.message);
+      setFeedbackBanner({
+        type: "error",
+        message: err.message || "지원 취소에 실패했습니다.",
+      });
     } finally {
       setCanceling(false);
     }
   };
 
   const decideApplication = async (app, newStatus, feedback = "") => {
-    if (newStatus === APPLICATION_STATUS.APPROVED) {
-      if (!window.confirm(`'${app.applicantName}' 님의 지원을 승인하시겠습니까?`)) {
-        return;
-      }
-    }
-
     setProcessingId(app.id);
+    setFeedbackBanner(null);
     try {
       const data = await updateApplicationStatus(app.id, newStatus, feedback);
       if (Array.isArray(data.applications)) {
@@ -146,9 +317,16 @@ export function usePostApplication(postId, externalUser = null) {
       if (data.post) {
         setPost(data.post);
       }
+      setFeedbackBanner({
+        type: "success",
+        message: data.message || "지원서 상태가 변경되었습니다.",
+      });
       emitNotificationsUpdated();
     } catch (err) {
-      alert(err.message);
+      setFeedbackBanner({
+        type: "error",
+        message: err.message || "상태 변경에 실패했습니다.",
+      });
     } finally {
       setProcessingId(null);
     }
@@ -162,6 +340,10 @@ export function usePostApplication(postId, externalUser = null) {
     existingApp,
     showApplicationForm,
     loading,
+    error,
+    errorStatus,
+    feedbackBanner,
+    highlightedAppId,
     filters: {
       status: statusFilter,
       dept: deptFilter,
@@ -174,6 +356,11 @@ export function usePostApplication(postId, externalUser = null) {
       submit: submitApplication,
       cancel: cancelMyApplication,
       decide: decideApplication,
+      startRevisionEdit: () => {
+        setFeedbackBanner(null);
+        setIsEditingRevision(true);
+      },
+      cancelRevisionEdit: () => setIsEditingRevision(false),
       submitting,
       canceling,
       processingId,

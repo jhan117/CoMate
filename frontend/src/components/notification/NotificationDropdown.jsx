@@ -1,28 +1,57 @@
 import { useState } from "react";
 import Button from "../common/Button";
+import Callout from "../common/Callout";
 import NotificationItem from "./NotificationItem";
+import { emitApplicationPageRefresh } from "../../constants/notificationConstants";
 import styles from "./NotificationDropdown.module.css";
+
+const STORAGE_KEY_NOTI_FILTER = "comate:notification-filter";
 
 function NotificationDropdown({
   activeUser,
   notifications,
   unreadCount,
+  error = "",
   onRead,
   onReadAll,
   onDelete,
   onClose,
 }) {
-  const [filter, setFilter] = useState("all"); // 'all' | 'unread'
+  const [filter, setFilter] = useState(() => {
+    try {
+      const saved = window.sessionStorage.getItem(STORAGE_KEY_NOTI_FILTER);
+      return saved === "unread" || saved === "all" ? saved : "all";
+    } catch {
+      return "all";
+    }
+  });
+
+  const handleFilterChange = (nextFilter) => {
+    setFilter(nextFilter);
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY_NOTI_FILTER, nextFilter);
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   const filteredList =
     filter === "unread"
       ? notifications.filter((n) => !n.isRead)
       : notifications;
 
-  const handleNavigate = (targetPath) => {
+  const handleNavigate = (targetPath, applicationId = "") => {
+    const hash = applicationId
+      ? `#application-${encodeURIComponent(applicationId)}`
+      : "";
     onClose();
-    if (window.location.pathname !== targetPath) {
-      window.location.href = targetPath;
+    if (window.location.pathname === targetPath) {
+      if (hash) {
+        window.history.replaceState(null, "", `${targetPath}${hash}`);
+      }
+      emitApplicationPageRefresh({ applicationId });
+    } else {
+      window.location.assign(`${targetPath}${hash}`);
     }
   };
 
@@ -67,7 +96,7 @@ function NotificationDropdown({
           className={`${styles.tabBtn} ${
             filter === "all" ? styles.tabActive : ""
           }`}
-          onClick={() => setFilter("all")}
+          onClick={() => handleFilterChange("all")}
         >
           전체 ({notifications.length})
         </button>
@@ -76,11 +105,17 @@ function NotificationDropdown({
           className={`${styles.tabBtn} ${
             filter === "unread" ? styles.tabActive : ""
           }`}
-          onClick={() => setFilter("unread")}
+          onClick={() => handleFilterChange("unread")}
         >
           안 읽음 ({unreadCount})
         </button>
       </div>
+
+      {error && (
+        <div role="alert" style={{ padding: "8px 12px 0" }}>
+          <Callout variant="danger">{error}</Callout>
+        </div>
+      )}
 
       {filteredList.length === 0 ? (
         <div className={styles.emptyState}>

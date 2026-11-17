@@ -82,3 +82,17 @@
   color: #b91c1c;
   font-weight: 600;
 }
+
+.success {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.success .title {
+  color: #047857;
+}
+
+.success .body {
+  color: #065f46;
+  font-weight: 600;
+}
