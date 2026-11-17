@@ -21,6 +21,7 @@ function ApplicationPage({ postId }) {
     error,
     errorStatus,
     feedbackBanner,
+    highlightedAppId,
     filters,
     actions,
   } = usePostApplication(postId);
@@ -125,15 +126,15 @@ function ApplicationPage({ postId }) {
                 currentUser={currentUser}
                 existingApplication={existingApp}
                 submitting={actions.submitting}
-                canceling={actions.canceling}
                 onSubmit={actions.submit}
-                onCancel={actions.cancel}
+                onCancelRevision={actions.cancelRevisionEdit}
               />
             ) : (
               <SubmittedApplicationCard
                 application={existingApp}
                 canceling={actions.canceling}
                 onCancel={actions.cancel}
+                onStartRevision={actions.startRevisionEdit}
               />
             )}
           </div>
@@ -177,6 +178,7 @@ function ApplicationPage({ postId }) {
                       application={app}
                       isTargetDeptFull={isTargetDeptFull}
                       processing={actions.processingId === app.id}
+                      highlighted={highlightedAppId === app.id}
                       onDecision={actions.decide}
                     />
                   );

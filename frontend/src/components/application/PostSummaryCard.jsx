@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Callout from "../common/Callout";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
 import { isDeptFull } from "../../utils/applicationUtils";
@@ -79,6 +80,8 @@ function DeptQuotaItem({ dept, applicantCount, isAuthorMode }) {
 }
 
 function PostSummaryCard({ post, applications, isAuthorMode }) {
+  const [showAuthorContent, setShowAuthorContent] = useState(false);
+
   const pendingCount = applications.filter(
     (a) => a.status === APPLICATION_STATUS.PENDING
   ).length;
@@ -153,6 +156,15 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           <p className={styles.bannerMeta}>
             작성자: <strong>{post.author}</strong> · 마감일: {post.deadline}
           </p>
+          {post.content && (
+            <button
+              type="button"
+              className={styles.contentToggleBtn}
+              onClick={() => setShowAuthorContent((prev) => !prev)}
+            >
+              {showAuthorContent ? "모집 상세 안내 접기 ▴" : "모집 상세 안내 보기 ▾"}
+            </button>
+          )}
         </div>
 
         <div className={styles.statBoxGroup}>
@@ -166,6 +178,14 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           </div>
         </div>
       </div>
+
+      {post.content && showAuthorContent && (
+        <div className={styles.bannerContentBox}>
+          <Callout variant="neutralBordered" title="내가 작성한 모집 상세 안내">
+            {post.content}
+          </Callout>
+        </div>
+      )}
 
       <div className={styles.bannerQuotaGrid}>{quotaItems}</div>
     </section>

@@ -6,6 +6,7 @@ const applicationController = require('../controllers/applicationController');
 router.use(requireAuth);
 
 router.get('/', applicationController.getApplicationsByPost);
+router.get('/overview', applicationController.getMyApplicationOverview);
 router.get('/:id', applicationController.getApplicationById);
 router.post('/', applicationController.createApplication);
 router.put('/:id', applicationController.resubmitApplication);

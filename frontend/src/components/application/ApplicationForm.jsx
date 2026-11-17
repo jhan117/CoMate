@@ -13,9 +13,8 @@ function ApplicationForm({
   currentUser,
   existingApplication,
   submitting,
-  canceling,
   onSubmit,
-  onCancel,
+  onCancelRevision,
 }) {
   const isRevisionMode =
     existingApplication &&
@@ -155,13 +154,16 @@ function ApplicationForm({
           <label className={styles.label} htmlFor="message">
             지원 동기 및 자기소개 <span className={styles.required}>*</span>
           </label>
-          <span className={styles.charCount}>{message.length}자</span>
+          <span className={styles.charCount}>
+            {message.length} / 1,000자 (최소 5자)
+          </span>
         </div>
         <textarea
           id="message"
           rows={6}
+          maxLength={1000}
           className={styles.textarea}
-          placeholder="간단한 자기소개, 가능한 역할 및 지원 동기를 작성해 주세요."
+          placeholder="간단한 자기소개, 가능한 역할 및 지원 동기를 5자 이상 작성해 주세요."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
@@ -170,12 +172,12 @@ function ApplicationForm({
       <div className={styles.formActions}>
         {isRevisionMode ? (
           <Button
-            variant="danger"
+            variant="secondary"
             size="lg"
-            disabled={canceling || submitting}
-            onClick={() => onCancel(existingApplication.id)}
+            disabled={submitting}
+            onClick={onCancelRevision}
           >
-            지원 취소
+            ← 수정 취소
           </Button>
         ) : (
           <Button as="a" href="/" variant="secondary" size="lg">

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "../../hooks/useNotifications";
 import NotificationDropdown from "./NotificationDropdown";
+import MyActivityDropdown from "./MyActivityDropdown";
 import styles from "./NotificationBell.module.css";
 
 function NotificationBell({ currentUser = null }) {
   const [open, setOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const wrapperRef = useRef(null);
 
   const { activeUser, notifications, unreadCount, error, actions } =
@@ -14,6 +16,7 @@ function NotificationBell({ currentUser = null }) {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setOpen(false);
+        setActivityOpen(false);
       }
     };
 
@@ -25,18 +28,33 @@ function NotificationBell({ currentUser = null }) {
 
   const handleToggle = () => {
     const nextOpen = !open;
+    setActivityOpen(false);
     setOpen(nextOpen);
     if (nextOpen) {
       actions.refresh();
     }
   };
 
+  const handleToggleActivity = () => {
+    setOpen(false);
+    setActivityOpen((prev) => !prev);
+  };
+
   return (
     <div className={styles.bellWrapper} ref={wrapperRef}>
       {activeUser && (
-        <span className={styles.currentUserBadge}>
-          <strong>{activeUser.name}</strong> 님 ({activeUser.dept})
-        </span>
+        <button
+          type="button"
+          className={`${styles.currentUserBadge} ${
+            activityOpen ? styles.bellBtnActive : ""
+          }`}
+          aria-label="내 모집 및 지원 현황 열기"
+          aria-expanded={activityOpen}
+          onClick={handleToggleActivity}
+        >
+          <strong>{activeUser.name}</strong> 님 ({activeUser.dept}) ·{" "}
+          <span className={styles.hubTriggerLabel}>내 모집·지원 ▾</span>
+        </button>
       )}
 
       <button
@@ -64,6 +82,13 @@ function NotificationBell({ currentUser = null }) {
           <span className={styles.unreadBadge}>{unreadCount}</span>
         )}
       </button>
+
+      {activityOpen && activeUser && (
+        <MyActivityDropdown
+          activeUser={activeUser}
+          onClose={() => setActivityOpen(false)}
+        />
+      )}
 
       {open && (
         <NotificationDropdown

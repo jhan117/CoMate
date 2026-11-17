@@ -2,7 +2,7 @@ import {
   NOTIFICATION_TYPES,
   NOTIFICATION_TYPE_LABELS,
 } from "../../constants/notificationConstants";
-import { formatDate } from "../../utils/applicationUtils";
+import { formatDate, formatRelativeTime } from "../../utils/applicationUtils";
 import styles from "./NotificationItem.module.css";
 
 const TYPE_STYLE_MAP = {
@@ -25,7 +25,10 @@ function NotificationItem({ notification, onRead, onDelete, onNavigate }) {
       await onRead(notification.id);
     }
     if (notification.postId) {
-      onNavigate(`/posts/${encodeURIComponent(notification.postId)}/application`);
+      onNavigate(
+        `/posts/${encodeURIComponent(notification.postId)}/application`,
+        notification.applicationId || ""
+      );
     }
   };
 
@@ -62,7 +65,10 @@ function NotificationItem({ notification, onRead, onDelete, onNavigate }) {
       <p className={styles.message}>{notification.message}</p>
 
       <div className={styles.bottomRow}>
-        <span className={styles.time}>{formatDate(notification.createdAt)}</span>
+        <span className={styles.time} title={formatDate(notification.createdAt)}>
+          {formatRelativeTime(notification.createdAt)} ·{" "}
+          {formatDate(notification.createdAt)}
+        </span>
         {notification.postId && (
           <span className={styles.linkHint}>지원 페이지 확인 →</span>
         )}

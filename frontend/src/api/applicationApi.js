@@ -20,6 +20,14 @@ export async function fetchPostApplicationData(postId) {
   );
 }
 
+export async function fetchMyApplicationOverview() {
+  return requestJson(
+    "/api/applications/overview",
+    { method: "GET" },
+    "내 모집·지원 현황을 불러오지 못했습니다."
+  );
+}
+
 export async function createApplication(payload) {
   return requestJson(
     "/api/applications",

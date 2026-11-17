@@ -58,6 +58,41 @@ const applicationModel = {
     return this.attachApplicant(app);
   },
 
+  findPostsByAuthorId(authorId) {
+    return store.posts
+      .filter((p) => p.authorId === String(authorId))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((post) => {
+        const postApps = store.applications.filter(
+          (app) => app.postId === String(post.id)
+        );
+        return {
+          ...this.attachAuthor(post),
+          totalApplicants: postApps.length,
+          pendingCount: postApps.filter((a) => a.status === 'pending').length,
+          revisionCount: postApps.filter(
+            (a) => a.status === 'revision_requested'
+          ).length,
+          approvedCount: postApps.filter((a) => a.status === 'approved').length,
+        };
+      });
+  },
+
+  findByApplicantId(applicantId) {
+    return store.applications
+      .filter((app) => app.applicantId === String(applicantId))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((app) => {
+        const post = store.posts.find((p) => p.id === String(app.postId));
+        return {
+          ...this.attachApplicant(app),
+          postTitle: post ? post.title : '삭제된 모집글',
+          postCategory: post ? post.category : '',
+          postDeadline: post ? post.deadline : '',
+        };
+      });
+  },
+
   findPostById(postId) {
     const post = store.posts.find((p) => p.id === String(postId)) || null;
     return this.attachAuthor(post);
@@ -94,10 +129,14 @@ const applicationModel = {
     const application = store.applications.find((app) => app.id === String(id));
     if (!application) return null;
 
+    if (application.feedback) {
+      application.previousFeedback = application.feedback;
+    }
     application.targetDept = targetDept;
     application.message = String(message).trim();
     application.status = 'pending';
     application.feedback = '';
+    application.isResubmitted = true;
     application.updatedAt = new Date().toISOString();
     return this.attachApplicant(application);
   },
