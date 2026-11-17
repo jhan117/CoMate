@@ -20,6 +20,9 @@ export function usePostApplication(postId, externalUser = null) {
   const currentUser = externalUser !== null ? externalUser : sessionUser;
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [errorStatus, setErrorStatus] = useState(null);
+  const [feedbackBanner, setFeedbackBanner] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [processingId, setProcessingId] = useState(null);
@@ -31,6 +34,8 @@ export function usePostApplication(postId, externalUser = null) {
     const loadPageData = async () => {
       try {
         setLoading(true);
+        setError("");
+        setErrorStatus(null);
         const data = await fetchPostApplicationData(postId);
         setPost(data.post);
         setApplications(data.applications);
@@ -39,7 +44,8 @@ export function usePostApplication(postId, externalUser = null) {
           emitActiveUserChanged(data.sessionUser);
         }
       } catch (err) {
-        console.error("데이터 로드 실패:", err);
+        setError(err.message || "데이터를 불러오지 못했습니다.");
+        setErrorStatus(err.status || 500);
       } finally {
         setLoading(false);
       }
@@ -81,10 +87,14 @@ export function usePostApplication(postId, externalUser = null) {
 
   const submitApplication = async ({ targetDept, message }) => {
     if (!currentUser) {
-      alert("로그인이 필요한 기능입니다.");
+      setFeedbackBanner({
+        type: "error",
+        message: "로그인이 필요한 기능입니다.",
+      });
       return;
     }
     setSubmitting(true);
+    setFeedbackBanner(null);
     try {
       if (
         existingApp &&
@@ -97,14 +107,24 @@ export function usePostApplication(postId, externalUser = null) {
         setApplications((prev) =>
           prev.map((a) => (a.id === data.application.id ? data.application : a))
         );
+        setFeedbackBanner({
+          type: "success",
+          message: data.message || "보완된 지원서가 다시 제출되었습니다.",
+        });
       } else {
         const data = await createApplication({
           postId: post.id,
-          applicantId: currentUser.id,
           targetDept,
           message,
         });
         setApplications((prev) => [data.application, ...prev]);
+        if (data.post) {
+          setPost(data.post);
+        }
+        setFeedbackBanner({
+          type: "success",
+          message: data.message || "지원서가 제출되었습니다.",
+        });
       }
       emitNotificationsUpdated();
     } finally {
@@ -116,11 +136,22 @@ export function usePostApplication(postId, externalUser = null) {
     if (!window.confirm("제출한 지원서를 취소하시겠습니까?")) return;
 
     setCanceling(true);
+    setFeedbackBanner(null);
     try {
-      await cancelApplication(applicationId);
+      const data = await cancelApplication(applicationId);
       setApplications((prev) => prev.filter((a) => a.id !== applicationId));
+      if (data?.post) {
+        setPost(data.post);
+      }
+      setFeedbackBanner({
+        type: "success",
+        message: data?.message || "지원이 취소되었습니다.",
+      });
     } catch (err) {
-      alert(err.message);
+      setFeedbackBanner({
+        type: "error",
+        message: err.message || "지원 취소에 실패했습니다.",
+      });
     } finally {
       setCanceling(false);
     }
@@ -134,6 +165,7 @@ export function usePostApplication(postId, externalUser = null) {
     }
 
     setProcessingId(app.id);
+    setFeedbackBanner(null);
     try {
       const data = await updateApplicationStatus(app.id, newStatus, feedback);
       if (Array.isArray(data.applications)) {
@@ -146,9 +178,16 @@ export function usePostApplication(postId, externalUser = null) {
       if (data.post) {
         setPost(data.post);
       }
+      setFeedbackBanner({
+        type: "success",
+        message: data.message || "지원서 상태가 변경되었습니다.",
+      });
       emitNotificationsUpdated();
     } catch (err) {
-      alert(err.message);
+      setFeedbackBanner({
+        type: "error",
+        message: err.message || "상태 변경에 실패했습니다.",
+      });
     } finally {
       setProcessingId(null);
     }
@@ -162,6 +201,9 @@ export function usePostApplication(postId, externalUser = null) {
     existingApp,
     showApplicationForm,
     loading,
+    error,
+    errorStatus,
+    feedbackBanner,
     filters: {
       status: statusFilter,
       dept: deptFilter,

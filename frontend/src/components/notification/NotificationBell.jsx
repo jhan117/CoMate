@@ -7,7 +7,7 @@ function NotificationBell({ currentUser = null }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  const { activeUser, notifications, unreadCount, actions } =
+  const { activeUser, notifications, unreadCount, error, actions } =
     useNotifications(currentUser);
 
   useEffect(() => {
@@ -70,6 +70,7 @@ function NotificationBell({ currentUser = null }) {
           activeUser={activeUser}
           notifications={notifications}
           unreadCount={unreadCount}
+          error={error}
           onRead={actions.markAsRead}
           onReadAll={actions.markAllAsRead}
           onDelete={actions.remove}

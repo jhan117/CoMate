@@ -15,9 +15,5 @@ export function isDeptFull(dept) {
 }
 
 export function getFirstAvailableDeptName(departments = []) {
-  return (
-    departments.find((d) => !isDeptFull(d))?.deptName ||
-    departments[0]?.deptName ||
-    ""
-  );
+  return departments.find((d) => !isDeptFull(d))?.deptName || "";
 }

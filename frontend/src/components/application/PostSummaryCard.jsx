@@ -88,10 +88,12 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
   );
   const totalMax = post.departments.reduce((sum, d) => sum + d.maxMembers, 0);
 
+  const totalApplicantsCount = post.totalApplicants ?? applications.length;
+
   const quotaItems = post.departments.map((dept) => {
-    const deptApplicantCount = applications.filter(
-      (a) => a.targetDept === dept.deptName
-    ).length;
+    const deptApplicantCount =
+      dept.applicantCount ??
+      applications.filter((a) => a.targetDept === dept.deptName).length;
 
     return (
       <DeptQuotaItem
@@ -128,7 +130,7 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           <div className={styles.quotaSectionHeader}>
             <h4 className={styles.subTitle}>모집 부문 및 인원 현황</h4>
             <span className={styles.totalSupportTag}>
-              총 지원 현황 {applications.length}명
+              총 지원 현황 {totalApplicantsCount}명
             </span>
           </div>
           <ul className={styles.sidebarQuotaList}>{quotaItems}</ul>

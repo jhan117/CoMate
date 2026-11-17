@@ -18,6 +18,9 @@ function ApplicationPage({ postId }) {
     existingApp,
     showApplicationForm,
     loading,
+    error,
+    errorStatus,
+    feedbackBanner,
     filters,
     actions,
   } = usePostApplication(postId);
@@ -30,10 +33,42 @@ function ApplicationPage({ postId }) {
     );
   }
 
+  if (errorStatus === 401 || (!post && !currentUser && errorStatus === 401)) {
+    return (
+      <main className={styles.pageWrapper}>
+        <div className={styles.pageContainer}>
+          <div className={styles.topBar}>
+            <div className={styles.topBarLeft}>
+              <Button as="a" href="/" variant="secondary" size="sm">
+                ← 목록으로 돌아가기
+              </Button>
+              <span className={styles.breadcrumb}>
+                모집 게시판 / <strong>팀원 지원 및 관리</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.loginRequiredCard}>
+            <Callout variant="neutralBordered" title="로그인이 필요한 서비스입니다">
+              {error || "지원서를 제출하거나 지원 현황을 확인하려면 먼저 로그인해 주세요."}
+            </Callout>
+            <div style={{ marginTop: "16px" }}>
+              <Button as="a" href="/" variant="primary" size="md">
+                메인 화면으로 이동하여 로그인하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (!post) {
     return (
       <main className={styles.pageWrapper}>
-        <p className={styles.loadingText}>모집글 정보를 찾을 수 없습니다.</p>
+        <p className={styles.loadingText}>
+          {error || "모집글 정보를 찾을 수 없습니다."}
+        </p>
       </main>
     );
   }
@@ -54,6 +89,16 @@ function ApplicationPage({ postId }) {
             </span>
           </div>
         </div>
+
+        {feedbackBanner && (
+          <div role="status" style={{ marginBottom: "16px" }}>
+            <Callout
+              variant={feedbackBanner.type === "error" ? "danger" : "success"}
+            >
+              {feedbackBanner.message}
+            </Callout>
+          </div>
+        )}
 
         {!currentUser ? (
           <div className={styles.loginRequiredCard}>

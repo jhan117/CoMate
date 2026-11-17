@@ -1,10 +1,16 @@
 const applicationModel = require('../models/applicationModel');
 const notificationModel = require('../models/notificationModel');
 
+function cleanText(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 const applicationController = {
   // 1. 특정 모집글의 지원 페이지 데이터 조회 (GET /api/applications?postId=1)
   getApplicationsByPost(req, res) {
-    const { postId } = req.query;
+    const postId = cleanText(req.query.postId);
+    const sessionUserId = req.userId;
+
     if (!postId) {
       return res.status(400).json({ message: 'postId 파라미터가 필요합니다.' });
     }
@@ -14,26 +20,54 @@ const applicationController = {
       return res.status(404).json({ message: '모집글을 찾을 수 없습니다.' });
     }
 
-    const applications = applicationModel.findByPostId(postId);
-    const sessionUser = req.session?.user?.id
-      ? applicationModel.findUserById(req.session.user.id)
-      : null;
+    // R10 (Authorization): 작성자는 전체 지원서 조회, 일반 지원자는 본인 지원서만 조회
+    let applications = [];
+    if (post.authorId === sessionUserId) {
+      applications = applicationModel.findByPostId(postId);
+    } else {
+      const myApplication = applicationModel.findByPostAndApplicant(
+        postId,
+        sessionUserId
+      );
+      applications = myApplication ? [myApplication] : [];
+    }
 
     return res.json({
       post,
       applications,
-      sessionUser,
+      sessionUser: req.user,
     });
+  },
+
+  // 1-2. 단건 지원서 상세 조회 (GET /api/applications/:id)
+  getApplicationById(req, res) {
+    const sessionUserId = req.userId;
+    const application = applicationModel.findById(req.params.id);
+
+    if (!application) {
+      return res.status(404).json({ message: '지원서를 찾을 수 없습니다.' });
+    }
+
+    const post = applicationModel.findPostById(application.postId);
+    const isApplicant = application.applicantId === sessionUserId;
+    const isPostAuthor = Boolean(post && post.authorId === sessionUserId);
+
+    if (!isApplicant && !isPostAuthor) {
+      return res.status(403).json({
+        message: '본인의 지원서 또는 본인 모집글의 지원서만 열람할 수 있습니다.',
+      });
+    }
+
+    return res.json({ application });
   },
 
   // 2. 지원서 제출 (POST /api/applications)
   createApplication(req, res) {
-    const { postId, targetDept, message } = req.body;
-    const applicantId = req.session?.user?.id || req.body?.applicantId;
-
-    if (!applicantId) {
-      return res.status(401).json({ message: '로그인이 필요한 기능입니다.' });
-    }
+    const postId = cleanText(req.body?.postId);
+    const targetDept = cleanText(req.body?.targetDept);
+    const message = cleanText(req.body?.message);
+    // R10: applicantId는 절대 브라우저(req.body)에서 받지 않고 세션에서만 가져옴
+    const user = req.user;
 
     if (!postId || !targetDept || !message) {
       return res.status(400).json({
@@ -41,14 +75,15 @@ const applicationController = {
       });
     }
 
+    if (message.length < 5 || message.length > 1000) {
+      return res.status(400).json({
+        message: '지원 동기는 5자 이상 1000자 이하로 작성해 주세요.',
+      });
+    }
+
     const post = applicationModel.findPostById(postId);
     if (!post) {
       return res.status(404).json({ message: '존재하지 않는 모집글입니다.' });
-    }
-
-    const user = applicationModel.findUserById(applicantId);
-    if (!user) {
-      return res.status(404).json({ message: '지원자 회원 정보를 찾을 수 없습니다.' });
     }
 
     if (post.authorId === user.id) {
@@ -94,17 +129,25 @@ const applicationController = {
     return res.status(201).json({
       message: '지원서가 제출되었습니다.',
       application: newApplication,
+      post: applicationModel.findPostById(post.id),
     });
   },
 
   // 3. 보완 요청받은 지원서 수정 재제출 (PUT /api/applications/:id)
   resubmitApplication(req, res) {
-    const { targetDept, message } = req.body;
-    const sessionUserId = req.session?.user?.id;
+    const targetDept = cleanText(req.body?.targetDept);
+    const message = cleanText(req.body?.message);
+    const sessionUserId = req.userId;
 
     if (!targetDept || !message) {
       return res.status(400).json({
         message: '지원 부문과 지원 동기를 모두 입력해 주세요.',
+      });
+    }
+
+    if (message.length < 5 || message.length > 1000) {
+      return res.status(400).json({
+        message: '지원 동기는 5자 이상 1000자 이하로 작성해 주세요.',
       });
     }
 
@@ -113,7 +156,7 @@ const applicationController = {
       return res.status(404).json({ message: '지원서를 찾을 수 없습니다.' });
     }
 
-    if (sessionUserId && application.applicantId !== sessionUserId) {
+    if (application.applicantId !== sessionUserId) {
       return res.status(403).json({ message: '본인의 지원서만 수정할 수 있습니다.' });
     }
 
@@ -160,17 +203,15 @@ const applicationController = {
 
   // 4. 지원 승인 / 보완 요청 / 거절 처리 (PATCH /api/applications/:id/status)
   updateApplicationStatus(req, res) {
-    const { status, feedback } = req.body;
-    const sessionUserId = req.session?.user?.id;
+    const status = cleanText(req.body?.status);
+    const feedback = cleanText(req.body?.feedback);
+    const sessionUserId = req.userId;
 
     if (!['approved', 'revision_requested', 'rejected'].includes(status)) {
       return res.status(400).json({ message: '유효하지 않은 상태 값입니다.' });
     }
 
-    if (
-      (status === 'revision_requested' || status === 'rejected') &&
-      (!feedback || !String(feedback).trim())
-    ) {
+    if ((status === 'revision_requested' || status === 'rejected') && !feedback) {
       return res.status(400).json({
         message:
           status === 'revision_requested'
@@ -189,7 +230,7 @@ const applicationController = {
       return res.status(404).json({ message: '연결된 모집글을 찾을 수 없습니다.' });
     }
 
-    if (sessionUserId && post.authorId !== sessionUserId) {
+    if (post.authorId !== sessionUserId) {
       return res.status(403).json({ message: '모집글 작성자만 지원서를 처리할 수 있습니다.' });
     }
 
@@ -277,7 +318,7 @@ const applicationController = {
         applicationId: updatedApplication.id,
         type: 'application_revision',
         title: '지원서 보완 요청',
-        message: `[${post.title}] 작성자가 '${updatedApplication.targetDept}' 부문 지원서에 대해 보완을 요청했습니다: ${String(feedback).trim()}`,
+        message: `[${post.title}] 작성자가 '${updatedApplication.targetDept}' 부문 지원서에 대해 보완을 요청했습니다: ${feedback}`,
       });
     } else if (status === 'rejected') {
       notificationModel.create({
@@ -286,7 +327,7 @@ const applicationController = {
         applicationId: updatedApplication.id,
         type: 'application_rejected',
         title: '지원 결과 안내 (거절)',
-        message: `[${post.title}] '${updatedApplication.targetDept}' 부문 지원이 거절되었습니다. 사유: ${String(feedback).trim()}`,
+        message: `[${post.title}] '${updatedApplication.targetDept}' 부문 지원이 거절되었습니다. 사유: ${feedback}`,
       });
     }
 
@@ -299,19 +340,19 @@ const applicationController = {
             : '지원을 거절했습니다.',
       application: updatedApplication,
       applications: applicationModel.findByPostId(post.id),
-      post: updatedPost,
+      post: applicationModel.findPostById(post.id) || updatedPost,
     });
   },
 
   // 5. 지원 취소 (DELETE /api/applications/:id)
   cancelApplication(req, res) {
-    const sessionUserId = req.session?.user?.id;
+    const sessionUserId = req.userId;
     const application = applicationModel.findById(req.params.id);
     if (!application) {
       return res.status(404).json({ message: '지원서를 찾을 수 없습니다.' });
     }
 
-    if (sessionUserId && application.applicantId !== sessionUserId) {
+    if (application.applicantId !== sessionUserId) {
       return res.status(403).json({ message: '본인의 지원서만 취소할 수 있습니다.' });
     }
 
@@ -322,7 +363,10 @@ const applicationController = {
     }
 
     applicationModel.removeById(application.id);
-    return res.json({ message: '지원이 취소되었습니다.' });
+    return res.json({
+      message: '지원이 취소되었습니다.',
+      post: applicationModel.findPostById(application.postId),
+    });
   },
 };
 

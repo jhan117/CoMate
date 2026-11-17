@@ -22,10 +22,21 @@ function ApplicationForm({
     existingApplication.status === APPLICATION_STATUS.REVISION_REQUESTED;
 
   const firstAvailable = getFirstAvailableDeptName(post.departments);
+  const isAllDeptsFull = post.departments.every((d) => isDeptFull(d));
 
-  const [targetDept, setTargetDept] = useState(
-    isRevisionMode ? existingApplication.targetDept : firstAvailable
-  );
+  const initialDept = (() => {
+    if (isRevisionMode && existingApplication?.targetDept) {
+      const targetObj = post.departments.find(
+        (d) => d.deptName === existingApplication.targetDept
+      );
+      if (targetObj && !isDeptFull(targetObj)) {
+        return existingApplication.targetDept;
+      }
+    }
+    return firstAvailable;
+  })();
+
+  const [targetDept, setTargetDept] = useState(initialDept);
   const [message, setMessage] = useState(
     isRevisionMode ? existingApplication.message : ""
   );
@@ -93,6 +104,12 @@ function ApplicationForm({
             </div>
           </div>
         </div>
+      )}
+
+      {isAllDeptsFull && (
+        <Callout variant="danger" title="모집 정원 마감 안내">
+          모든 모집 부문의 정원이 마감되어 현재 지원서를 제출할 수 없습니다.
+        </Callout>
       )}
 
       {errorMsg && <Callout variant="danger">{errorMsg}</Callout>}
@@ -165,8 +182,15 @@ function ApplicationForm({
             ← 목록으로 돌아가기
           </Button>
         )}
-        <Button type="submit" variant="primary" size="lg" disabled={submitting}>
-          {submitting
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          disabled={submitting || isAllDeptsFull}
+        >
+          {isAllDeptsFull
+            ? "모집 마감"
+            : submitting
             ? "제출 중..."
             : isRevisionMode
             ? "보완 내용 제출"

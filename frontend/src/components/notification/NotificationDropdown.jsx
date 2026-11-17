@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "../common/Button";
+import Callout from "../common/Callout";
 import NotificationItem from "./NotificationItem";
 import styles from "./NotificationDropdown.module.css";
 
@@ -7,6 +8,7 @@ function NotificationDropdown({
   activeUser,
   notifications,
   unreadCount,
+  error = "",
   onRead,
   onReadAll,
   onDelete,
@@ -81,6 +83,12 @@ function NotificationDropdown({
           안 읽음 ({unreadCount})
         </button>
       </div>
+
+      {error && (
+        <div role="alert" style={{ padding: "8px 12px 0" }}>
+          <Callout variant="danger">{error}</Callout>
+        </div>
+      )}
 
       {filteredList.length === 0 ? (
         <div className={styles.emptyState}>
