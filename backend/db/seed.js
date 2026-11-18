@@ -1,5 +1,3 @@
-const db = require('./index');
-
 // bcrypt hash for '123' (cost 10)
 const DEFAULT_PASSWORD_HASH =
   '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
@@ -402,9 +400,101 @@ const seedData = {
       createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
     },
   ],
+  conversations: [
+    {
+      id: '1',
+      user1Id: '1',
+      user2Id: '6',
+      postId: '6',
+      createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+      updatedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    },
+    {
+      id: '2',
+      user1Id: '5',
+      user2Id: '6',
+      postId: '2',
+      createdAt: new Date(Date.now() - 1000 * 60 * 110).toISOString(),
+      updatedAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+    },
+    {
+      id: '3',
+      user1Id: '1',
+      user2Id: '2',
+      postId: '1',
+      createdAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(),
+      updatedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    },
+  ],
+  messages: [
+    {
+      id: '1',
+      conversationId: '1',
+      senderId: '1',
+      content:
+        '안녕하세요 기영님! 교내 캠퍼스 서비스 리디자인 프로젝트 지원서 잘 읽어보았습니다.',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    },
+    {
+      id: '2',
+      conversationId: '1',
+      senderId: '6',
+      content:
+        '안녕하세요 서연님! 승인해 주셔서 감사합니다. 첫 킥오프 회의 일정이 언제인지 여쭤봐도 될까요?',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+    },
+    {
+      id: '3',
+      conversationId: '1',
+      senderId: '1',
+      content:
+        '이번 주 금요일 오후 4시에 학생회관 3층 라운지에서 진행하려고 합니다!',
+      isRead: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    },
+    {
+      id: '4',
+      conversationId: '2',
+      senderId: '5',
+      content:
+        '기영님, 일본어 교양 시험 대비 스터디 지원서 보완해서 다시 제출했습니다!',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 11).toISOString(),
+    },
+    {
+      id: '5',
+      conversationId: '2',
+      senderId: '6',
+      content:
+        '네 희서님! 확인했습니다. 매주 화·목 오후 6시 도서관 스터디룸에서 뵈어요.',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+    },
+    {
+      id: '6',
+      conversationId: '3',
+      senderId: '2',
+      content:
+        '안녕하세요! 2026 AI 서비스 해커톤 기획 파트로 지원한 박준혁입니다.',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(),
+    },
+    {
+      id: '7',
+      conversationId: '3',
+      senderId: '1',
+      content:
+        '반갑습니다 준혁님! 기획 포트폴리오 관련해서 궁금한 점이 있어 연락드렸습니다.',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    },
+  ],
 };
 
 async function seedDatabase() {
+  const db = require('./index');
   await db.initDatabase();
 
   await db.withTransaction(async (client) => {
@@ -488,11 +578,50 @@ async function seedDatabase() {
       );
     }
 
+    for (const conv of seedData.conversations) {
+      await client.query(
+        `INSERT INTO conversations (
+           id, user1_id, user2_id, post_id, created_at, updated_at
+         )
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (user1_id, user2_id) DO NOTHING`,
+        [
+          Number(conv.id),
+          Number(conv.user1Id),
+          Number(conv.user2Id),
+          conv.postId ? Number(conv.postId) : null,
+          conv.createdAt,
+          conv.updatedAt,
+        ]
+      );
+    }
+
+    for (const msg of seedData.messages) {
+      await client.query(
+        `INSERT INTO messages (
+           id, conversation_id, sender_id, content, is_read, created_at, updated_at
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          Number(msg.id),
+          Number(msg.conversationId),
+          Number(msg.senderId),
+          msg.content,
+          Boolean(msg.isRead),
+          msg.createdAt,
+          msg.updatedAt || null,
+        ]
+      );
+    }
+
     await client.query(`
       SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1));
       SELECT setval(pg_get_serial_sequence('posts', 'id'), COALESCE((SELECT MAX(id) FROM posts), 1));
       SELECT setval(pg_get_serial_sequence('applications', 'id'), COALESCE((SELECT MAX(id) FROM applications), 1));
       SELECT setval(pg_get_serial_sequence('notifications', 'id'), COALESCE((SELECT MAX(id) FROM notifications), 1));
+      SELECT setval(pg_get_serial_sequence('conversations', 'id'), COALESCE((SELECT MAX(id) FROM conversations), 1));
+      SELECT setval(pg_get_serial_sequence('messages', 'id'), COALESCE((SELECT MAX(id) FROM messages), 1));
     `);
   });
 }
