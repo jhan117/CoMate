@@ -37,23 +37,10 @@ export function useNotifications(externalUser = null) {
       setError("");
     };
 
-    const handleAuthSectionInteraction = (e) => {
-      if (e.target?.closest?.('[aria-label="회원 인증"]')) {
-        window.setTimeout(() => {
-          syncSessionUser();
-        }, 250);
-        window.setTimeout(() => {
-          syncSessionUser();
-        }, 700);
-      }
-    };
-
     window.addEventListener(
       NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
       handleUserChanged
     );
-    document.addEventListener("submit", handleAuthSectionInteraction);
-    document.addEventListener("click", handleAuthSectionInteraction);
 
     fetch("/api/auth/me", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
@@ -68,26 +55,19 @@ export function useNotifications(externalUser = null) {
         NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
         handleUserChanged
       );
-      document.removeEventListener("submit", handleAuthSectionInteraction);
-      document.removeEventListener("click", handleAuthSectionInteraction);
     };
-  }, [syncSessionUser]);
+  }, []);
 
   const userId = activeUser?.id;
 
-  const loadNotifications = useCallback(async () => {
-    setError("");
-    const currentSessionUser =
-      externalUser !== null ? externalUser : await syncSessionUser();
-    const targetUserId = currentSessionUser?.id || userId;
-
-    if (!targetUserId) {
-      setNotifications([]);
-      setUnreadCount(0);
-      return;
-    }
-
+  const fetchNotificationsForUser = useCallback(async (targetUserId) => {
     try {
+      await Promise.resolve();
+      if (!targetUserId) {
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
       setLoading(true);
       const data = await fetchNotifications();
       setNotifications(data.notifications || []);
@@ -103,35 +83,24 @@ export function useNotifications(externalUser = null) {
     } finally {
       setLoading(false);
     }
-  }, [externalUser, syncSessionUser, userId]);
+  }, []);
+
+  const loadNotifications = useCallback(async () => {
+    setError("");
+    const currentSessionUser =
+      externalUser !== null ? externalUser : await syncSessionUser();
+    const targetUserId = currentSessionUser?.id || userId;
+    await fetchNotificationsForUser(targetUserId);
+  }, [externalUser, fetchNotificationsForUser, syncSessionUser, userId]);
 
   useEffect(() => {
-    let active = true;
-
-    if (!userId) {
-      return;
-    }
-
-    const fetchInitialNotifications = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchNotifications();
-        if (active) {
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.unreadCount ?? 0);
-        }
-      } catch (err) {
-        if (active) console.error("알림 조회 실패:", err);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    fetchInitialNotifications();
-
-    return () => {
-      active = false;
-    };
+    if (!userId) return;
+    fetchNotifications()
+      .then((data) => {
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount ?? 0);
+      })
+      .catch(() => {});
   }, [userId]);
 
   useEffect(() => {

@@ -9,14 +9,9 @@ import styles from "./NotificationDropdown.module.css";
 const STORAGE_KEY_ACTIVITY_TAB = "comate:my-activity-tab";
 
 function MyActivityDropdown({ activeUser, onClose }) {
-  const [tab, setTab] = useState(() => {
-    try {
-      const saved = window.sessionStorage.getItem(STORAGE_KEY_ACTIVITY_TAB);
-      return saved === "applicant" || saved === "author" ? saved : "author";
-    } catch {
-      return "author";
-    }
-  });
+  const [tab, setTab] = useState(
+    () => window.sessionStorage.getItem(STORAGE_KEY_ACTIVITY_TAB) || "author"
+  );
   const [myPosts, setMyPosts] = useState([]);
   const [myApplications, setMyApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,11 +19,7 @@ function MyActivityDropdown({ activeUser, onClose }) {
 
   const handleTabChange = (nextTab) => {
     setTab(nextTab);
-    try {
-      window.sessionStorage.setItem(STORAGE_KEY_ACTIVITY_TAB, nextTab);
-    } catch {
-      // ignore storage errors
-    }
+    window.sessionStorage.setItem(STORAGE_KEY_ACTIVITY_TAB, nextTab);
   };
 
   useEffect(() => {
@@ -45,15 +36,9 @@ function MyActivityDropdown({ activeUser, onClose }) {
         setMyPosts(posts);
         setMyApplications(apps);
 
-        let hasSavedTab = false;
-        try {
-          hasSavedTab = Boolean(
-            window.sessionStorage.getItem(STORAGE_KEY_ACTIVITY_TAB)
-          );
-        } catch {
-          hasSavedTab = false;
-        }
-
+        const hasSavedTab = Boolean(
+          window.sessionStorage.getItem(STORAGE_KEY_ACTIVITY_TAB)
+        );
         if (!hasSavedTab && posts.length === 0 && apps.length > 0) {
           setTab("applicant");
         }

@@ -1,197 +1,291 @@
-const store = require('../store');
+const db = require('../db');
+
+function mapApplicationRow(row) {
+  if (!row) return null;
+  const hasUpdated = Boolean(row.updated_at);
+  const isPendingResubmitted = row.status === 'pending' && hasUpdated;
+
+  return {
+    id: String(row.id),
+    postId: String(row.post_id),
+    applicantId: String(row.applicant_id),
+    targetDept: row.target_dept,
+    message: row.message,
+    status: row.status,
+    feedback: isPendingResubmitted ? '' : row.feedback || '',
+    previousFeedback: isPendingResubmitted ? row.feedback || '' : '',
+    isResubmitted: hasUpdated,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+    processedAt: row.processed_at
+      ? new Date(row.processed_at).toISOString()
+      : null,
+    applicantStudentId: row.applicant_student_id || '',
+    applicantName: row.applicant_name || '알 수 없음',
+    applicantDept: row.applicant_dept || '',
+    ...(row.post_title !== undefined
+      ? {
+          postTitle: row.post_title,
+          postCategory: row.post_category,
+          postDeadline: row.post_deadline,
+        }
+      : {}),
+  };
+}
+
+const BASE_APPLICATION_SELECT = `
+  SELECT
+    a.*,
+    u.student_id AS applicant_student_id,
+    u.name AS applicant_name,
+    u.dept AS applicant_dept
+  FROM applications a
+  JOIN users u ON u.id = a.applicant_id
+`;
 
 const applicationModel = {
-  // users 테이블(배열)과 JOIN 역할: 게시글에 작성자 이름 및 지원 집계 연결
-  attachAuthor(post) {
-    if (!post) return null;
-    const authorUser = this.findUserById(post.authorId);
-    const postApps = store.applications.filter(
-      (app) => app.postId === String(post.id)
+  async findUserById(userId) {
+    const { rows } = await db.query(
+      `SELECT id::text AS id, student_id AS "studentId", name, dept
+       FROM users
+       WHERE id = $1`,
+      [userId]
     );
-    const departments = Array.isArray(post.departments)
-      ? post.departments.map((dept) => ({
-          ...dept,
-          applicantCount: postApps.filter((a) => a.targetDept === dept.deptName)
-            .length,
-        }))
-      : [];
+    return rows[0] || null;
+  },
+
+  async findPostById(postId) {
+    const postResult = await db.query(
+      `SELECT
+         p.id::text AS id,
+         p.category,
+         p.title,
+         p.content,
+         p.author_id::text AS "authorId",
+         p.created_at AS "createdAt",
+         TO_CHAR(p.deadline, 'YYYY-MM-DD') AS deadline,
+         u.name AS author,
+         (SELECT COUNT(*)::int FROM applications a WHERE a.post_id = p.id) AS "totalApplicants"
+       FROM posts p
+       JOIN users u ON u.id = p.author_id
+       WHERE p.id = $1`,
+      [postId]
+    );
+
+    const post = postResult.rows[0];
+    if (!post) return null;
+
+    const deptResult = await db.query(
+      `SELECT
+         pd.dept_name AS "deptName",
+         pd.current_members AS "currentMembers",
+         pd.max_members AS "maxMembers",
+         COUNT(a.id)::int AS "applicantCount"
+       FROM post_departments pd
+       LEFT JOIN applications a
+         ON a.post_id = pd.post_id AND a.target_dept = pd.dept_name
+       WHERE pd.post_id = $1
+       GROUP BY pd.id, pd.dept_name, pd.current_members, pd.max_members
+       ORDER BY pd.id ASC`,
+      [postId]
+    );
 
     return {
       ...post,
-      departments,
-      totalApplicants: postApps.length,
-      author: authorUser ? authorUser.name : '알 수 없음',
+      createdAt: post.createdAt ? new Date(post.createdAt).toISOString() : null,
+      departments: deptResult.rows,
     };
   },
 
-  // users 테이블(배열)과 JOIN 역할: 지원서에 지원자 학번/이름/학과 연결
-  attachApplicant(app) {
-    if (!app) return null;
-    const applicantUser = this.findUserById(app.applicantId);
-    return {
-      ...app,
-      applicantStudentId: applicantUser ? applicantUser.studentId : '',
-      applicantName: applicantUser ? applicantUser.name : '알 수 없음',
-      applicantDept: applicantUser ? applicantUser.dept : '',
-    };
+  async findByPostId(postId) {
+    const { rows } = await db.query(
+      `${BASE_APPLICATION_SELECT}
+       WHERE a.post_id = $1
+       ORDER BY a.created_at DESC`,
+      [postId]
+    );
+
+    return rows.map(mapApplicationRow);
   },
 
-  findByPostId(postId) {
-    return store.applications
-      .filter((app) => app.postId === String(postId))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .map((app) => this.attachApplicant(app));
+  async findById(id) {
+    const { rows } = await db.query(
+      `${BASE_APPLICATION_SELECT}
+       WHERE a.id = $1`,
+      [id]
+    );
+
+    return mapApplicationRow(rows[0]);
   },
 
-  findById(id) {
-    const app = store.applications.find((a) => a.id === String(id)) || null;
-    return this.attachApplicant(app);
+  async findByPostAndApplicant(postId, applicantId) {
+    const { rows } = await db.query(
+      `${BASE_APPLICATION_SELECT}
+       WHERE a.post_id = $1 AND a.applicant_id = $2`,
+      [postId, applicantId]
+    );
+
+    return mapApplicationRow(rows[0]);
   },
 
-  findByPostAndApplicant(postId, applicantId) {
-    const app =
-      store.applications.find(
-        (a) =>
-          a.postId === String(postId) &&
-          a.applicantId === String(applicantId)
-      ) || null;
-    return this.attachApplicant(app);
+  async findPostsByAuthorId(authorId) {
+    const { rows } = await db.query(
+      `SELECT
+         p.id::text AS id,
+         p.category,
+         p.title,
+         p.content,
+         p.author_id::text AS "authorId",
+         p.created_at AS "createdAt",
+         TO_CHAR(p.deadline, 'YYYY-MM-DD') AS deadline,
+         u.name AS author,
+         COUNT(a.id)::int AS "totalApplicants",
+         COUNT(a.id) FILTER (WHERE a.status = 'pending')::int AS "pendingCount",
+         COUNT(a.id) FILTER (WHERE a.status = 'revision_requested')::int AS "revisionCount",
+         COUNT(a.id) FILTER (WHERE a.status = 'approved')::int AS "approvedCount"
+       FROM posts p
+       JOIN users u ON u.id = p.author_id
+       LEFT JOIN applications a ON a.post_id = p.id
+       WHERE p.author_id = $1
+       GROUP BY p.id, u.name
+       ORDER BY p.created_at DESC`,
+      [authorId]
+    );
+
+    return rows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
+    }));
   },
 
-  findPostsByAuthorId(authorId) {
-    return store.posts
-      .filter((p) => p.authorId === String(authorId))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .map((post) => {
-        const postApps = store.applications.filter(
-          (app) => app.postId === String(post.id)
-        );
-        return {
-          ...this.attachAuthor(post),
-          totalApplicants: postApps.length,
-          pendingCount: postApps.filter((a) => a.status === 'pending').length,
-          revisionCount: postApps.filter(
-            (a) => a.status === 'revision_requested'
-          ).length,
-          approvedCount: postApps.filter((a) => a.status === 'approved').length,
-        };
-      });
+  async findByApplicantId(applicantId) {
+    const { rows } = await db.query(
+      `SELECT
+         a.*,
+         u.student_id AS applicant_student_id,
+         u.name AS applicant_name,
+         u.dept AS applicant_dept,
+         p.title AS post_title,
+         p.category AS post_category,
+         TO_CHAR(p.deadline, 'YYYY-MM-DD') AS post_deadline
+       FROM applications a
+       JOIN users u ON u.id = a.applicant_id
+       JOIN posts p ON p.id = a.post_id
+       WHERE a.applicant_id = $1
+       ORDER BY a.created_at DESC`,
+      [applicantId]
+    );
+
+    return rows.map(mapApplicationRow);
   },
 
-  findByApplicantId(applicantId) {
-    return store.applications
-      .filter((app) => app.applicantId === String(applicantId))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .map((app) => {
-        const post = store.posts.find((p) => p.id === String(app.postId));
-        return {
-          ...this.attachApplicant(app),
-          postTitle: post ? post.title : '삭제된 모집글',
-          postCategory: post ? post.category : '',
-          postDeadline: post ? post.deadline : '',
-        };
-      });
+  async create({ postId, user, targetDept, message }) {
+    const { rows } = await db.query(
+      `INSERT INTO applications (post_id, applicant_id, target_dept, message, status, feedback)
+       VALUES ($1, $2, $3, $4, 'pending', '')
+       RETURNING id`,
+      [postId, user.id, targetDept, String(message).trim()]
+    );
+
+    return this.findById(rows[0].id);
   },
 
-  findPostById(postId) {
-    const post = store.posts.find((p) => p.id === String(postId)) || null;
-    return this.attachAuthor(post);
+  async resubmit(id, { targetDept, message }) {
+    const { rows } = await db.query(
+      `UPDATE applications
+       SET target_dept = $1,
+           message = $2,
+           status = 'pending',
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING id`,
+      [targetDept, String(message).trim(), id]
+    );
+
+    if (!rows[0]) return null;
+    return this.findById(rows[0].id);
   },
 
-  findUserById(userId) {
-    const user = store.users.find((u) => u.id === String(userId));
-    if (!user) return null;
-    return {
-      id: user.id,
-      studentId: user.studentId,
-      name: user.name,
-      dept: user.dept,
-    };
+  async updateStatus(id, { status, feedback = '' }) {
+    const { rows } = await db.query(
+      `UPDATE applications
+       SET status = $1,
+           feedback = $2,
+           processed_at = NOW()
+       WHERE id = $3
+       RETURNING id`,
+      [status, String(feedback).trim(), id]
+    );
+
+    if (!rows[0]) return null;
+    return this.findById(rows[0].id);
   },
 
-  create({ postId, user, targetDept, message }) {
-    const newApplication = {
-      id: `app-${Date.now()}`,
-      postId: String(postId),
-      applicantId: user.id,
-      targetDept,
-      message: String(message).trim(),
-      status: 'pending',
-      feedback: '',
-      createdAt: new Date().toISOString(),
-    };
+  async incrementPostDeptMember(postId, deptName) {
+    const txResult = await db.withTransaction(async (client) => {
+      const deptRes = await client.query(
+        `SELECT id, dept_name AS "deptName", current_members AS "currentMembers", max_members AS "maxMembers"
+         FROM post_departments
+         WHERE post_id = $1 AND dept_name = $2
+         FOR UPDATE`,
+        [postId, deptName]
+      );
 
-    store.applications.push(newApplication);
-    return this.attachApplicant(newApplication);
-  },
+      const dept = deptRes.rows[0];
+      if (!dept) return { error: 'DEPT_NOT_FOUND' };
 
-  resubmit(id, { targetDept, message }) {
-    const application = store.applications.find((app) => app.id === String(id));
-    if (!application) return null;
-
-    if (application.feedback) {
-      application.previousFeedback = application.feedback;
-    }
-    application.targetDept = targetDept;
-    application.message = String(message).trim();
-    application.status = 'pending';
-    application.feedback = '';
-    application.isResubmitted = true;
-    application.updatedAt = new Date().toISOString();
-    return this.attachApplicant(application);
-  },
-
-  updateStatus(id, { status, feedback = '' }) {
-    const application = store.applications.find((app) => app.id === String(id));
-    if (!application) return null;
-
-    application.status = status;
-    application.feedback = String(feedback).trim();
-    application.processedAt = new Date().toISOString();
-    return this.attachApplicant(application);
-  },
-
-  incrementPostDeptMember(postId, deptName) {
-    const post = store.posts.find((p) => p.id === String(postId));
-    if (!post) return { error: 'POST_NOT_FOUND' };
-
-    const dept = post.departments.find((d) => d.deptName === deptName);
-    if (!dept) return { error: 'DEPT_NOT_FOUND' };
-
-    if (dept.currentMembers >= dept.maxMembers) {
-      return { error: 'DEPT_FULL', dept };
-    }
-
-    dept.currentMembers += 1;
-    return { post: this.attachAuthor(post), dept };
-  },
-
-  autoRejectPendingByDept(postId, deptName, excludeApplicationId, feedback) {
-    const now = new Date().toISOString();
-    const autoRejected = [];
-
-    store.applications.forEach((app) => {
-      if (
-        app.postId === String(postId) &&
-        app.targetDept === deptName &&
-        app.id !== String(excludeApplicationId) &&
-        (app.status === 'pending' || app.status === 'revision_requested')
-      ) {
-        app.status = 'rejected';
-        app.feedback = String(feedback).trim();
-        app.processedAt = now;
-        autoRejected.push(this.attachApplicant(app));
+      if (dept.currentMembers >= dept.maxMembers) {
+        return { error: 'DEPT_FULL', dept };
       }
+
+      const updatedRes = await client.query(
+        `UPDATE post_departments
+         SET current_members = current_members + 1
+         WHERE id = $1
+         RETURNING dept_name AS "deptName", current_members AS "currentMembers", max_members AS "maxMembers"`,
+        [dept.id]
+      );
+
+      return { dept: updatedRes.rows[0] };
     });
 
-    return autoRejected;
+    return txResult;
   },
 
-  removeById(id) {
-    const index = store.applications.findIndex((app) => app.id === String(id));
-    if (index === -1) return false;
-    store.applications.splice(index, 1);
-    return true;
+  async autoRejectPendingByDept(
+    postId,
+    deptName,
+    excludeApplicationId,
+    feedback
+  ) {
+    const { rows } = await db.query(
+      `UPDATE applications a
+       SET status = 'rejected',
+           feedback = $1,
+           processed_at = NOW()
+       FROM users u
+       WHERE a.applicant_id = u.id
+         AND a.post_id = $2
+         AND a.target_dept = $3
+         AND a.id <> $4
+         AND a.status IN ('pending', 'revision_requested')
+       RETURNING
+         a.*,
+         u.student_id AS applicant_student_id,
+         u.name AS applicant_name,
+         u.dept AS applicant_dept`,
+      [String(feedback).trim(), postId, deptName, excludeApplicationId]
+    );
+
+    return rows.map(mapApplicationRow);
+  },
+
+  async removeById(id) {
+    const { rowCount } = await db.query(
+      'DELETE FROM applications WHERE id = $1',
+      [id]
+    );
+    return rowCount > 0;
   },
 };
 
