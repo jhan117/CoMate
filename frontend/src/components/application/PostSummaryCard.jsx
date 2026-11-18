@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Callout from "../common/Callout";
+import MessageIconLink from "../common/MessageIconLink";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
 import { isDeptFull } from "../../utils/applicationUtils";
 import styles from "./PostSummaryCard.module.css";
@@ -117,9 +118,16 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
         </div>
 
         <h2 className={styles.sidebarTitle}>{post.title}</h2>
-        <p className={styles.sidebarAuthor}>
-          모집 팀장: <strong>{post.author}</strong>
-        </p>
+        <div className={styles.sidebarAuthorRow}>
+          <p className={styles.sidebarAuthor}>
+            모집 팀장: <strong>{post.author}</strong>
+          </p>
+          <MessageIconLink
+            recipientId={post.authorId}
+            postId={post.id}
+            label="팀장에게 쪽지 보내기"
+          />
+        </div>
 
         {post.content && (
           <div className={styles.contentSection}>

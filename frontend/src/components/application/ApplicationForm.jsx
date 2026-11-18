@@ -111,7 +111,11 @@ function ApplicationForm({
         </Callout>
       )}
 
-      {errorMsg && <Callout variant="danger">{errorMsg}</Callout>}
+      {errorMsg && (
+        <Callout variant="danger" onClose={() => setErrorMsg("")}>
+          {errorMsg}
+        </Callout>
+      )}
 
       <div className={styles.fieldGroup}>
         <label className={styles.label}>

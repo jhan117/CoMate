@@ -90,12 +90,25 @@
   color: #b45309;
 }
 
+.typeMessage {
+  background-color: #cffafe;
+  color: #0e7490;
+}
+
 .title {
   font-size: 13px;
   font-weight: 700;
   color: #111827;
 }
 
+.itemActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.readBtn,
 .deleteBtn {
   background: transparent;
   border: none;
@@ -105,6 +118,11 @@
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 6px;
+}
+
+.readBtn:hover {
+  background-color: #eef2ff;
+  color: #4f46e5;
 }
 
 .deleteBtn:hover {

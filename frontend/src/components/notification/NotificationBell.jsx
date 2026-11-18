@@ -42,21 +42,6 @@ function NotificationBell({ currentUser = null }) {
 
   return (
     <div className={styles.bellWrapper} ref={wrapperRef}>
-      {activeUser && (
-        <button
-          type="button"
-          className={`${styles.currentUserBadge} ${
-            activityOpen ? styles.bellBtnActive : ""
-          }`}
-          aria-label="내 모집 및 지원 현황 열기"
-          aria-expanded={activityOpen}
-          onClick={handleToggleActivity}
-        >
-          <strong>{activeUser.name}</strong> 님 ({activeUser.dept}) ·{" "}
-          <span className={styles.hubTriggerLabel}>내 모집·지원 ▾</span>
-        </button>
-      )}
-
       <button
         type="button"
         className={`${styles.bellBtn} ${open ? styles.bellBtnActive : ""}`}
@@ -83,11 +68,26 @@ function NotificationBell({ currentUser = null }) {
         )}
       </button>
 
+      {activeUser && (
+        <button
+          type="button"
+          className={`${styles.currentUserBadge} ${
+            activityOpen ? styles.bellBtnActive : ""
+          }`}
+          aria-label="내 모집 및 지원 현황 열기"
+          aria-expanded={activityOpen}
+          onClick={handleToggleActivity}
+        >
+          <strong>{activeUser.name}</strong>{" "}
+          <span className={styles.userHonorific}>님</span>{" "}
+          <span className={styles.userDeptText}>({activeUser.dept}) · </span>
+          <span className={styles.hubTriggerLabel}>내 모집·지원 ▾</span>
+          <span className={styles.hubTriggerCompact}>▾</span>
+        </button>
+      )}
+
       {activityOpen && activeUser && (
-        <MyActivityDropdown
-          activeUser={activeUser}
-          onClose={() => setActivityOpen(false)}
-        />
+        <MyActivityDropdown onClose={() => setActivityOpen(false)} />
       )}
 
       {open && (
@@ -98,7 +98,9 @@ function NotificationBell({ currentUser = null }) {
           error={error}
           onRead={actions.markAsRead}
           onReadAll={actions.markAllAsRead}
+          onDeleteAll={actions.removeAll}
           onDelete={actions.remove}
+          onClearError={actions.clearError}
           onClose={() => setOpen(false)}
         />
       )}

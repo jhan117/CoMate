@@ -25,7 +25,7 @@
   - 수업 프로젝트 가이드라인(Minimum Technical Requirements, 일정, Optional Extensions 등) 확인 및 방향성 수립
   - **최우선 과제**: Minimum Technical Requirements를 충족하지 못한 기존 코드 보완
   - **추가 기능 (Optional Extensions)**: `Socket.IO` 기반 실시간(Real-time) 1:1 쪽지 기능 구현
-    - 범위: 1:1 텍스트 채팅 실시간 송수신, Supabase(PostgreSQL) 대화 내역 저장 *(그룹 채팅·파일 첨부·읽음 표시 등 제외)*
+    - 범위: 1:1 텍스트 채팅 실시간 송수신, Supabase(PostgreSQL) 대화 내역 저장 *(그룹 채팅·파일 첨부 등 제외)* `[변경: 읽음 표시 및 알림 벨 연동 포함]`
   - **DB 도입**: PostgreSQL 사용, 서버는 Supabase(김희서 계정) 활용 (사전 합의 내용 확정)
   - **회의 방식**: 전체 회의 수업 후 대면 진행
   - **역할 분담**:

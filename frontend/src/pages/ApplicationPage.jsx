@@ -95,6 +95,7 @@ function ApplicationPage({ postId }) {
           <div role="status" style={{ marginBottom: "16px" }}>
             <Callout
               variant={feedbackBanner.type === "error" ? "danger" : "success"}
+              onClose={actions.clearFeedback}
             >
               {feedbackBanner.message}
             </Callout>

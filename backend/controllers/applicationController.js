@@ -41,7 +41,6 @@ const applicationController = {
       return res.status(404).json({ message: '모집글을 찾을 수 없습니다.' });
     }
 
-    // R10 (Authorization): 작성자는 전체 지원서 조회, 일반 지원자는 본인 지원서만 조회
     let applications = [];
     if (post.authorId === sessionUserId) {
       applications = await applicationModel.findByPostId(postId);
@@ -90,7 +89,6 @@ const applicationController = {
     const postId = cleanText(req.body?.postId);
     const targetDept = cleanText(req.body?.targetDept);
     const message = cleanText(req.body?.message);
-    // R10: applicantId는 절대 브라우저(req.body)에서 받지 않고 세션에서만 가져옴
     const user = req.user;
 
     if (!postId || !targetDept || !message) {

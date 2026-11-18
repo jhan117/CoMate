@@ -28,11 +28,19 @@ export async function markNotificationAsRead(notificationId) {
   );
 }
 
-export async function markAllNotificationsAsRead() {
+export async function markAllNotificationsAsRead(filter = "all") {
   return requestJson(
-    "/api/notifications/read-all",
+    `/api/notifications/read-all?filter=${encodeURIComponent(filter)}`,
     { method: "PATCH" },
     "전체 읽음 처리에 실패했습니다."
+  );
+}
+
+export async function deleteAllNotifications(filter = "all") {
+  return requestJson(
+    `/api/notifications?filter=${encodeURIComponent(filter)}`,
+    { method: "DELETE" },
+    "알림 일괄 삭제에 실패했습니다."
   );
 }
 

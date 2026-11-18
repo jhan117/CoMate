@@ -2,8 +2,35 @@ export function formatDate(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   return d.toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "short",
     day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function getSeoulDateKey(iso) {
+  if (!iso) return "";
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+  }).format(new Date(iso));
+}
+
+export function formatFullDate(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export function formatTimeOnly(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString("ko-KR", {
+    timeZone: "Asia/Seoul",
     hour: "2-digit",
     minute: "2-digit",
   });
