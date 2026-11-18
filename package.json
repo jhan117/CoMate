@@ -9,6 +9,7 @@
     "start": "npm --prefix backend start",
     "dev:backend": "npm --prefix backend start",
     "dev:frontend": "npm --prefix frontend run dev",
-    "db:seed": "npm --prefix backend run db:seed"
+    "db:seed": "npm --prefix backend run db:seed",
+    "test": "node tests/01-invalid-login.test.js && node tests/02-user-isolation.test.js && node tests/03-logout-session.test.js"
   }
 }
