@@ -1,4 +1,5 @@
 import Callout from "../common/Callout";
+import MessageIconLink from "../common/MessageIconLink";
 import StatusBadge from "./StatusBadge";
 import ApplicantDecisionFooter from "./ApplicantDecisionFooter";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
@@ -58,6 +59,11 @@ function ApplicantCard({
         </div>
 
         <div className={styles.rightBadges}>
+          <MessageIconLink
+            recipientId={application.applicantId}
+            postId={application.postId}
+            label="지원자에게 쪽지 보내기"
+          />
           <span className={styles.targetDeptBadge}>
             지원 부문: <strong>{application.targetDept}</strong>
           </span>

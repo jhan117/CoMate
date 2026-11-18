@@ -5,6 +5,7 @@ export const NOTIFICATION_TYPES = {
   APPLICATION_REVISION: "application_revision",
   APPLICATION_REJECTED: "application_rejected",
   RECRUITMENT_CLOSED: "recruitment_closed",
+  MESSAGE_NEW: "message_new",
 };
 
 export const NOTIFICATION_TYPE_LABELS = {
@@ -14,6 +15,7 @@ export const NOTIFICATION_TYPE_LABELS = {
   [NOTIFICATION_TYPES.APPLICATION_REVISION]: "보완 요청",
   [NOTIFICATION_TYPES.APPLICATION_REJECTED]: "지원 거절",
   [NOTIFICATION_TYPES.RECRUITMENT_CLOSED]: "모집 마감",
+  [NOTIFICATION_TYPES.MESSAGE_NEW]: "새 쪽지",
 };
 
 export const NOTIFICATION_EVENTS = {

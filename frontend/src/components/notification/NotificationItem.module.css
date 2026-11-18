@@ -90,6 +90,11 @@
   color: #b45309;
 }
 
+.typeMessage {
+  background-color: #cffafe;
+  color: #0e7490;
+}
+
 .title {
   font-size: 13px;
   font-weight: 700;

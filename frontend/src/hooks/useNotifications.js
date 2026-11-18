@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import {
   fetchNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  deleteAllNotifications,
 } from "../api/notificationApi";
 import { NOTIFICATION_EVENTS } from "../constants/notificationConstants";
 
@@ -104,6 +106,24 @@ export function useNotifications(externalUser = null) {
   }, [userId]);
 
   useEffect(() => {
+    if (!userId) return;
+
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || undefined;
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("notification:updated", () => {
+      loadNotifications();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [userId, loadNotifications]);
+
+  useEffect(() => {
     const handleUpdated = () => {
       loadNotifications();
     };
@@ -133,15 +153,29 @@ export function useNotifications(externalUser = null) {
     }
   };
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = async (filter = "all") => {
     if (!userId) return;
     setError("");
     try {
-      const data = await markAllNotificationsAsRead();
+      const data = await markAllNotificationsAsRead(filter);
       setNotifications(data.notifications || []);
-      setUnreadCount(0);
+      setUnreadCount(data.unreadCount ?? 0);
     } catch (err) {
       setError(err.message || "전체 읽음 처리에 실패했습니다.");
+    }
+  };
+
+  const removeAllNotifications = async (filter = "all") => {
+    if (!userId) return false;
+    setError("");
+    try {
+      const data = await deleteAllNotifications(filter);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount ?? 0);
+      return true;
+    } catch (err) {
+      setError(err.message || "알림 일괄 삭제에 실패했습니다.");
+      return false;
     }
   };
 
@@ -166,6 +200,7 @@ export function useNotifications(externalUser = null) {
       refresh: loadNotifications,
       markAsRead,
       markAllAsRead,
+      removeAll: removeAllNotifications,
       remove: removeNotification,
     },
   };
