@@ -1,4 +1,3 @@
-require('dotenv').config();
 const db = require('./index');
 
 // bcrypt hash for '123' (cost 10)
@@ -499,6 +498,7 @@ async function seedDatabase() {
 }
 
 if (require.main === module) {
+  require('dotenv').config();
   seedDatabase()
     .then(() => {
       console.log('시드 데이터 적재 완료');
