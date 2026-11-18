@@ -92,7 +92,7 @@ function mapConversationRow(row, viewerUserId) {
   };
 }
 
-// $1은 항상 조회 주체(viewerUserId)로 전달해 대화방별 안 읽은 메시지 개수를 안전하게 산출합니다.
+// $1 = viewerUserId (안 읽은 메시지 개수 계산용)
 const BASE_CONVERSATION_SELECT = `
   SELECT
     c.*,
@@ -197,7 +197,7 @@ const messageModel = {
 
     if (existingRes.rows[0]) {
       const existing = existingRes.rows[0];
-      if (postId && !existing.post_id) {
+      if (postId && String(existing.post_id || '') !== String(postId)) {
         await db.query(
           `UPDATE conversations
            SET post_id = $1
@@ -213,7 +213,7 @@ const messageModel = {
       `INSERT INTO conversations (user1_id, user2_id, post_id)
        VALUES ($1, $2, $3)
        ON CONFLICT (user1_id, user2_id)
-       DO UPDATE SET post_id = COALESCE(conversations.post_id, EXCLUDED.post_id)
+       DO UPDATE SET post_id = COALESCE(EXCLUDED.post_id, conversations.post_id)
        RETURNING id, (xmax = 0) AS created`,
       [user1Id, user2Id, postId || null]
     );

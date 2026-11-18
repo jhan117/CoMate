@@ -38,10 +38,8 @@ const notificationController = {
         .json({ message: '본인의 알림만 읽음 처리할 수 있습니다.' });
     }
 
-    const [notification, unreadCount] = await Promise.all([
-      notificationModel.markAsRead(target.id),
-      notificationModel.countUnreadByRecipientId(userId),
-    ]);
+    const notification = await notificationModel.markAsRead(target.id);
+    const unreadCount = await notificationModel.countUnreadByRecipientId(userId);
 
     return res.status(200).json({
       message: '알림을 읽음 처리했습니다.',
@@ -59,10 +57,8 @@ const notificationController = {
       return res.status(400).json({ message: '유효하지 않은 알림 필터입니다.' });
     }
 
-    const [notifications, unreadCount] = await Promise.all([
-      notificationModel.markAllAsRead(userId, filter),
-      notificationModel.countUnreadByRecipientId(userId),
-    ]);
+    const notifications = await notificationModel.markAllAsRead(userId, filter);
+    const unreadCount = await notificationModel.countUnreadByRecipientId(userId);
 
     return res.status(200).json({
       message: '선택한 알림을 모두 읽음 처리했습니다.',
