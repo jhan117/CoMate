@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { login, logout, signup } from '../api/authApi'
+import { login, logout, signup } from '../../api/authApi'
+import Button from '../common/Button'
+import Callout from '../common/Callout'
 import styles from './AuthBar.module.css'
 
 export default function AuthBar({ user, onUserChange, authLoading }) {
@@ -104,7 +106,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
 
             <button
               type="button"
-              className={styles.outlineButton}
+              variant="secondary"
               disabled={busy}
               onClick={signOut}
             >
@@ -115,7 +117,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
           <>
             <button
               type="button"
-              className={styles.outlineButton}
+              className="secondary"
               onClick={() => openModal('login')}
             >
               로그인
@@ -123,7 +125,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
 
             <button
               type="button"
-              className={styles.primaryButton}
+              className="primary"
               onClick={() => openModal('signup')}
             >
               회원가입
@@ -133,8 +135,10 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
       </div>
 
       {!mode && error && (
-        <div className={styles.headerError} role="alert">
-          {error}
+        <div role="alert">
+          <Callout variant="error" className={styles.headerError}>
+            {error}
+          </Callout>
         </div>
       )}
 
@@ -170,8 +174,10 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
             </div>
 
             {error && (
-              <div className={styles.error} role="alert">
-                {error}
+              <div role="alert">
+                <Callout variant="error" className={styles.error}>
+                  {error}
+                </Callout>
               </div>
             )}
 
@@ -242,8 +248,9 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                   </>
                 )}
 
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
                   className={styles.submitButton}
                 >
                   {busy
@@ -251,7 +258,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                     : signingUp
                       ? '가입하기'
                       : '로그인'}
-                </button>
+                </Button>
               </fieldset>
             </form>
 

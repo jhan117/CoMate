@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Button from './common/Button'
+import Button from '../common/Button'
 import styles from './PostForm.module.css'
 
 const emptyDepartment = { deptName: '', maxMembers: '1' }

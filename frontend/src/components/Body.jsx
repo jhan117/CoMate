@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { deletePost, fetchPosts, savePost } from '../api/postApi'
 import Button from './common/Button'
 import Callout from './common/Callout'
-import PostCard from './PostCard'
-import PostFilters from './PostFilters'
-import PostForm from './PostForm'
+import PostCard from './post/PostCard'
+import PostFilters from './post/PostFilters'
+import PostForm from './post/PostForm'
 import styles from './Body.module.css'
 
 const baseCategories = ['대회', '공모전', '해커톤', '팀플', '스터디']

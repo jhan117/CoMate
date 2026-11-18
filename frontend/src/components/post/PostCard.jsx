@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import Button from './common/Button'
+import Button from '../common/Button'
 import card from './PostCard.module.css'
 
 function deadlineLabel(deadline) {
@@ -44,26 +44,33 @@ export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
   }, [])
 
   return (
-    <article ref={cardRef} className={card.sidebarCard}>
+    <article ref={cardRef} className={card.card}>
       <a
         href={detailUrl}
         className={card.cardLink}
         aria-label={`${post.title} 지원 페이지 보기`}
       />
-      <div className={card.sidebarBadgeRow}>
+      <div className={card.badgeRow}>
         <span className={card.categoryBadge}>{post.category}</span>
         <time className={card.deadlineText} dateTime={post.deadline}>
           {deadlineLabel(post.deadline)} · {post.deadline}
         </time>
       </div>
 
-      <h2 className={card.sidebarTitle}>{post.title}</h2>
-      <p className={card.sidebarAuthor}>모집 팀장 <strong>{post.author}</strong></p>
-
-      <ul className={card.sidebarQuotaList}>
+      <h2 className={card.title}>{post.title}</h2>
+      <p className={card.author}>모집 팀장 <strong>{post.author}</strong></p>
+      
+      {post.content && (
+        <div className={card.contentSection}>
+          <strong>모집 상세 안내</strong>
+          <p>{post.content}</p>
+        </div>
+      )}
+      
+      <ul className={card.quotaList}>
         {post.departments.map(({ deptName, currentMembers, maxMembers }) => (
-          <li key={deptName} className={card.sidebarQuotaItem}>
-            <div className={card.sidebarQuotaTop}>
+          <li key={deptName} className={card.quotaItem}>
+            <div className={card.quotaTop}>
               <span className={card.deptName}>{deptName}</span>
               <span className={card.memberRatio}>{currentMembers} / {maxMembers}명</span>
             </div>

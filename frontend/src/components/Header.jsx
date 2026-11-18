@@ -1,6 +1,6 @@
 import NotificationBell from "./notification/NotificationBell";
 import styles from "./Header.module.css";
-import AuthBar from "./AuthBar";
+import AuthBar from "./auth/AuthBar";
 
 function Header({ user, onUserChange, authLoading }) {
   return (
