@@ -329,6 +329,7 @@ export function usePostApplication(postId, externalUser = null) {
         setIsEditingRevision(true);
       },
       cancelRevisionEdit: () => setIsEditingRevision(false),
+      clearFeedback: () => setFeedbackBanner(null),
       submitting,
       canceling,
       processingId,

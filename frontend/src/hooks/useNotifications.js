@@ -202,6 +202,7 @@ export function useNotifications(externalUser = null) {
       markAllAsRead,
       removeAll: removeAllNotifications,
       remove: removeNotification,
+      clearError: () => setError(""),
     },
   };
 }

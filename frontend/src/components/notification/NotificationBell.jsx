@@ -87,10 +87,7 @@ function NotificationBell({ currentUser = null }) {
       )}
 
       {activityOpen && activeUser && (
-        <MyActivityDropdown
-          activeUser={activeUser}
-          onClose={() => setActivityOpen(false)}
-        />
+        <MyActivityDropdown onClose={() => setActivityOpen(false)} />
       )}
 
       {open && (
@@ -103,6 +100,7 @@ function NotificationBell({ currentUser = null }) {
           onReadAll={actions.markAllAsRead}
           onDeleteAll={actions.removeAll}
           onDelete={actions.remove}
+          onClearError={actions.clearError}
           onClose={() => setOpen(false)}
         />
       )}

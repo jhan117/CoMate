@@ -44,6 +44,11 @@ function NotificationItem({ notification, onRead, onDelete, onNavigate }) {
     }
   };
 
+  const handleReadClick = (e) => {
+    e.stopPropagation();
+    onRead(notification.id);
+  };
+
   const handleDeleteClick = (e) => {
     e.stopPropagation();
     onDelete(notification.id);
@@ -64,14 +69,26 @@ function NotificationItem({ notification, onRead, onDelete, onNavigate }) {
           </span>
           <strong className={styles.title}>{notification.title}</strong>
         </div>
-        <button
-          type="button"
-          className={styles.deleteBtn}
-          aria-label="알림 삭제"
-          onClick={handleDeleteClick}
-        >
-          삭제
-        </button>
+        <div className={styles.itemActions}>
+          {!notification.isRead && (
+            <button
+              type="button"
+              className={styles.readBtn}
+              aria-label="알림 읽음 처리"
+              onClick={handleReadClick}
+            >
+              읽음
+            </button>
+          )}
+          <button
+            type="button"
+            className={styles.deleteBtn}
+            aria-label="알림 삭제"
+            onClick={handleDeleteClick}
+          >
+            삭제
+          </button>
+        </div>
       </div>
 
       <p className={styles.message}>{notification.message}</p>

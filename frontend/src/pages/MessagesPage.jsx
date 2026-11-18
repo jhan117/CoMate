@@ -17,6 +17,7 @@ function MessagesPage() {
     selectedConversationId,
     activeConversation,
     messages,
+    activeDraft,
     loading,
     threadLoading,
     sending,
@@ -69,10 +70,12 @@ function MessagesPage() {
   return (
     <main className={styles.pageWrapper}>
       <div className={styles.pageContainer}>
-        {feedbackBanner && (
-          <div role="status">
+        {feedbackBanner && !activeConversation && (
+          <div role="alert">
             <Callout
               variant={feedbackBanner.type === "error" ? "danger" : "success"}
+              size="compact"
+              onClose={actions.clearFeedback}
             >
               {feedbackBanner.message}
             </Callout>
@@ -81,7 +84,13 @@ function MessagesPage() {
 
         {error && errorStatus !== 401 && (
           <div role="alert">
-            <Callout variant="danger">{error}</Callout>
+            <Callout
+              variant="danger"
+              size="compact"
+              onClose={actions.clearError}
+            >
+              {error}
+            </Callout>
           </div>
         )}
 
@@ -103,13 +112,20 @@ function MessagesPage() {
               conversation={activeConversation}
               messages={messages}
               currentUser={currentUser}
+              draft={activeDraft}
               loading={threadLoading}
               sending={sending}
               processingMessageId={processingMessageId}
+              feedbackBanner={activeConversation ? feedbackBanner : null}
+              onDraftChange={(value) =>
+                activeConversation &&
+                actions.setDraft(activeConversation.id, value)
+              }
               onSend={actions.sendMessage}
               onEdit={actions.editMessage}
               onRequestDelete={setDeleteTarget}
               onBackToList={actions.clearSelectedConversation}
+              onClearFeedback={actions.clearFeedback}
             />
           </div>
         </div>

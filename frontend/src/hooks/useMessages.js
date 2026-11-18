@@ -37,6 +37,7 @@ export function useMessages() {
   const [selectedConversationId, setSelectedConversationId] = useState("");
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [draftsByConversation, setDraftsByConversation] = useState({});
   const [loading, setLoading] = useState(true);
   const [threadLoading, setThreadLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -55,7 +56,6 @@ export function useMessages() {
     selectedIdRef.current = selectedConversationId;
   }, [selectedConversationId]);
 
-  // 1. 세션 사용자 확인 및 로그인/로그아웃 이벤트 연동
   useEffect(() => {
     let active = true;
 
@@ -69,6 +69,7 @@ export function useMessages() {
         setSelectedConversationId("");
         setActiveConversation(null);
         setMessages([]);
+        setDraftsByConversation({});
       }
     };
 
@@ -99,9 +100,9 @@ export function useMessages() {
     };
   }, []);
 
-  // 2. 특정 대화방 메시지 불러오기 (조회 시 읽음 자동 반영 + 상단 알림 동기화)
   const selectConversation = useCallback(async (conversationId) => {
     await Promise.resolve();
+    setFeedbackBanner(null);
 
     if (!conversationId) {
       setSelectedConversationId("");
@@ -135,9 +136,17 @@ export function useMessages() {
     setSelectedConversationId("");
     setActiveConversation(null);
     setMessages([]);
+    setFeedbackBanner(null);
   }, []);
 
-  // 3. 대화방 목록 및 URL 딥링크(?to=&postId= 또는 ?conversationId=) 초기 로드
+  const setDraft = useCallback((conversationId, value) => {
+    if (!conversationId) return;
+    setDraftsByConversation((prev) => ({
+      ...prev,
+      [String(conversationId)]: value,
+    }));
+  }, []);
+
   useEffect(() => {
     if (!authChecked) return;
 
@@ -196,11 +205,7 @@ export function useMessages() {
         const convList = listData.conversations || [];
         setConversations(convList);
 
-        const isCompactViewport = window.innerWidth <= 860;
-        const initialId =
-          targetConvId ||
-          selectedIdRef.current ||
-          (!isCompactViewport && convList[0] ? convList[0].id : "");
+        const initialId = targetConvId || selectedIdRef.current || "";
 
         if (initialId) {
           await selectConversation(initialId);
@@ -225,7 +230,6 @@ export function useMessages() {
     };
   }, [authChecked, selectConversation, userId]);
 
-  // 4. Socket.IO 실시간 연결 및 이벤트 구독
   useEffect(() => {
     if (!userId) {
       if (socketRef.current) {
@@ -281,7 +285,7 @@ export function useMessages() {
             }
             emitNotificationsUpdated();
           } catch {
-            // 실시간 읽음 처리 실패 시 다음 조회 시점에 서버에서 재동기화
+            // 다음 방 조회 시 서버에서 재동기화됨
           }
         }
       }
@@ -354,15 +358,15 @@ export function useMessages() {
     };
   }, [userId]);
 
-  // 5. 액션 핸들러 (메시지 전송, 수정, 삭제)
   const sendMessage = async (content) => {
-    if (!selectedConversationId) return false;
+    const targetConvId = selectedConversationId;
+    if (!targetConvId) return false;
     setSending(true);
     setFeedbackBanner(null);
     setError("");
 
     try {
-      const data = await createDirectMessage(selectedConversationId, content);
+      const data = await createDirectMessage(targetConvId, content);
       if (data.chatMessage) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === data.chatMessage.id)) return prev;
@@ -373,6 +377,11 @@ export function useMessages() {
         setActiveConversation(data.conversation);
         setConversations((prev) => upsertConversation(prev, data.conversation));
       }
+      setDraftsByConversation((prev) => {
+        const next = { ...prev };
+        delete next[String(targetConvId)];
+        return next;
+      });
       return true;
     } catch (err) {
       setFeedbackBanner({
@@ -439,6 +448,11 @@ export function useMessages() {
     }
   };
 
+  const activeDraft =
+    userId && selectedConversationId
+      ? draftsByConversation[String(selectedConversationId)] || ""
+      : "";
+
   return {
     currentUser,
     authChecked,
@@ -446,6 +460,7 @@ export function useMessages() {
     selectedConversationId: userId ? selectedConversationId : "",
     activeConversation: userId ? activeConversation : null,
     messages: userId ? messages : [],
+    activeDraft,
     loading,
     threadLoading,
     sending,
@@ -456,9 +471,11 @@ export function useMessages() {
     actions: {
       selectConversation,
       clearSelectedConversation,
+      setDraft,
       sendMessage,
       editMessage,
       removeMessage,
+      clearError: () => setError(""),
       clearFeedback: () => setFeedbackBanner(null),
     },
   };

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MESSAGE_MAX_LENGTH } from "../../constants/messageConstants";
-import { formatDate } from "../../utils/applicationUtils";
+import { formatDate, formatTimeOnly } from "../../utils/applicationUtils";
 import styles from "./MessageBubble.module.css";
 
 function MessageBubble({
@@ -12,6 +12,15 @@ function MessageBubble({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
+  const editInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!editing || !editInputRef.current) return;
+    const el = editInputRef.current;
+    el.focus();
+    const end = el.value.length;
+    el.setSelectionRange(end, end);
+  }, [editing]);
 
   const trimmedDraft = draft.trim();
   const canSave = Boolean(trimmedDraft) && trimmedDraft !== message.content.trim();
@@ -95,13 +104,13 @@ function MessageBubble({
                   {draft.endsWith("\n") ? " " : ""}
                 </span>
                 <textarea
+                  ref={editInputRef}
                   className={styles.editInput}
                   value={draft}
                   maxLength={MESSAGE_MAX_LENGTH}
                   rows={1}
                   disabled={processing}
                   aria-label="쪽지 내용 수정"
-                  autoFocus
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={handleEditKeyDown}
                 />
@@ -123,8 +132,11 @@ function MessageBubble({
             isMine ? styles.bottomMetaMine : styles.bottomMetaPartner
           }`}
         >
-          <span className={styles.timestamp}>
-            {formatDate(message.createdAt)}
+          <span
+            className={styles.timestamp}
+            title={formatDate(message.createdAt)}
+          >
+            {formatTimeOnly(message.createdAt)}
             {message.isEdited && !message.isDeleted ? " · (수정됨)" : ""}
           </span>
 

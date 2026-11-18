@@ -8,7 +8,7 @@ import styles from "./NotificationDropdown.module.css";
 
 const STORAGE_KEY_ACTIVITY_TAB = "comate:my-activity-tab";
 
-function MyActivityDropdown({ activeUser, onClose }) {
+function MyActivityDropdown({ onClose }) {
   const [tab, setTab] = useState(
     () => window.sessionStorage.getItem(STORAGE_KEY_ACTIVITY_TAB) || "author"
   );
@@ -76,9 +76,6 @@ function MyActivityDropdown({ activeUser, onClose }) {
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h3 className={styles.headerTitle}>내 모집·지원 현황</h3>
-          {activeUser && (
-            <span className={styles.userTag}>{activeUser.name} 님</span>
-          )}
         </div>
       </div>
 
@@ -105,7 +102,13 @@ function MyActivityDropdown({ activeUser, onClose }) {
 
       {error && (
         <div role="alert" style={{ padding: "8px 12px 0" }}>
-          <Callout variant="danger">{error}</Callout>
+          <Callout
+            variant="danger"
+            size="compact"
+            onClose={() => setError("")}
+          >
+            {error}
+          </Callout>
         </div>
       )}
 

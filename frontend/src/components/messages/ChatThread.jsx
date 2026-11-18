@@ -1,22 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Button from "../common/Button";
+import Callout from "../common/Callout";
 import MessageBubble from "./MessageBubble";
 import { MESSAGE_MAX_LENGTH } from "../../constants/messageConstants";
+import {
+  formatFullDate,
+  getSeoulDateKey,
+} from "../../utils/applicationUtils";
 import styles from "./ChatThread.module.css";
 
 function ChatThread({
   conversation,
   messages,
   currentUser,
+  draft = "",
   loading = false,
   sending = false,
   processingMessageId = "",
+  feedbackBanner = null,
+  onDraftChange,
   onSend,
   onEdit,
   onRequestDelete,
   onBackToList,
+  onClearFeedback,
 }) {
-  const [content, setContent] = useState("");
   const scrollAreaRef = useRef(null);
 
   useEffect(() => {
@@ -27,13 +35,10 @@ function ChatThread({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const trimmed = content.trim();
+    const trimmed = draft.trim();
     if (!trimmed || sending) return;
 
-    const ok = await onSend(trimmed);
-    if (ok) {
-      setContent("");
-    }
+    await onSend(trimmed);
   };
 
   const handleKeyDown = (e) => {
@@ -128,18 +133,44 @@ function ChatThread({
             </p>
           </div>
         ) : (
-          messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isMine={String(msg.senderId) === String(currentUser?.id)}
-              processing={processingMessageId === String(msg.id)}
-              onEdit={onEdit}
-              onRequestDelete={onRequestDelete}
-            />
-          ))
+          messages.map((msg, index) => {
+            const currentDateKey = getSeoulDateKey(msg.createdAt);
+            const prevDateKey =
+              index > 0 ? getSeoulDateKey(messages[index - 1].createdAt) : "";
+            const showDateDivider =
+              Boolean(currentDateKey) && currentDateKey !== prevDateKey;
+
+            return (
+              <div key={msg.id}>
+                {showDateDivider && (
+                  <div className={styles.dateDivider}>
+                    <span>{formatFullDate(msg.createdAt)}</span>
+                  </div>
+                )}
+                <MessageBubble
+                  message={msg}
+                  isMine={String(msg.senderId) === String(currentUser?.id)}
+                  processing={processingMessageId === String(msg.id)}
+                  onEdit={onEdit}
+                  onRequestDelete={onRequestDelete}
+                />
+              </div>
+            );
+          })
         )}
       </div>
+
+      {feedbackBanner && (
+        <div className={styles.inlineAlert} role="alert">
+          <Callout
+            variant={feedbackBanner.type === "error" ? "danger" : "success"}
+            size="compact"
+            onClose={onClearFeedback}
+          >
+            {feedbackBanner.message}
+          </Callout>
+        </div>
+      )}
 
       <form className={styles.composer} onSubmit={handleSubmit}>
         <label className={styles.srOnly} htmlFor="direct-message-input">
@@ -149,22 +180,22 @@ function ChatThread({
           id="direct-message-input"
           className={styles.composerInput}
           placeholder={`${partner.name} 님에게 보낼 쪽지를 입력해 주세요 (Enter 전송, Shift+Enter 줄바꿈)`}
-          value={content}
+          value={draft}
           maxLength={MESSAGE_MAX_LENGTH}
           rows={2}
           disabled={sending}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <div className={styles.composerFooter}>
           <span className={styles.charCounter}>
-            {content.length} / {MESSAGE_MAX_LENGTH}자
+            {draft.length} / {MESSAGE_MAX_LENGTH}자
           </span>
           <Button
             type="submit"
             variant="primary"
             size="md"
-            disabled={sending || !content.trim()}
+            disabled={sending || !draft.trim()}
           >
             {sending ? "전송 중..." : "쪽지 보내기"}
           </Button>

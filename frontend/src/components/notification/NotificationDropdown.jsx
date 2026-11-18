@@ -27,6 +27,7 @@ function NotificationDropdown({
   onReadAll,
   onDeleteAll,
   onDelete,
+  onClearError,
   onClose,
 }) {
   const [filter, setFilter] = useState(
@@ -112,7 +113,6 @@ function NotificationDropdown({
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h3 className={styles.headerTitle}>알림</h3>
-          <span className={styles.userTag}>{activeUser.name} 님</span>
         </div>
         <div className={styles.headerActions}>
           <Button
@@ -175,7 +175,9 @@ function NotificationDropdown({
 
       {error && (
         <div role="alert" style={{ padding: "8px 12px 0" }}>
-          <Callout variant="danger">{error}</Callout>
+          <Callout variant="danger" size="compact" onClose={onClearError}>
+            {error}
+          </Callout>
         </div>
       )}
 

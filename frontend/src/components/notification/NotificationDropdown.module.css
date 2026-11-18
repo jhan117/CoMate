@@ -40,15 +40,6 @@
   color: #111827;
 }
 
-.userTag {
-  font-size: 12px;
-  font-weight: 600;
-  color: #4f46e5;
-  background-color: #eef2ff;
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
 .filterTabs {
   display: flex;
   flex-wrap: wrap;

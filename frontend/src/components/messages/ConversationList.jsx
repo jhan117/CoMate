@@ -73,7 +73,11 @@ function ConversationList({ conversations, selectedId, onSelect }) {
                     )}
 
                     <div className={styles.bottomRow}>
-                      <p className={styles.previewText}>
+                      <p
+                        className={`${styles.previewText} ${
+                          lastMsg?.isDeleted ? styles.previewTextDeleted : ""
+                        }`}
+                      >
                         {lastMsg
                           ? lastMsg.content
                           : "아직 주고받은 쪽지가 없습니다."}

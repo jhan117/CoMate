@@ -149,6 +149,11 @@
   min-width: 0;
 }
 
+.previewTextDeleted {
+  font-style: italic;
+  color: #9ca3af;
+}
+
 .unreadBadge {
   display: inline-flex;
   align-items: center;
