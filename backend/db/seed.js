@@ -2,6 +2,14 @@
 const DEFAULT_PASSWORD_HASH =
   '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
 
+function daysAgoAtKst(daysAgo, hour, minute) {
+  const kstOffsetMs = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(Date.now() + kstOffsetMs);
+  kstNow.setUTCDate(kstNow.getUTCDate() - daysAgo);
+  kstNow.setUTCHours(hour, minute, 0, 0);
+  return new Date(kstNow.getTime() - kstOffsetMs).toISOString();
+}
+
 const seedData = {
   users: [
     { id: '1', studentId: '24100412', name: '이서연', dept: '디자인학과' },
@@ -399,6 +407,17 @@ const seedData = {
       isRead: false,
       createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
     },
+    {
+      id: '9',
+      recipientId: '6',
+      postId: '2',
+      conversationId: '2',
+      type: 'message_new',
+      title: '김희서 님의 새 쪽지',
+      message: '혹시 첫 모임 때 단어장 출력물도 챙겨가야 할까요?',
+      isRead: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+    },
   ],
   conversations: [
     {
@@ -406,24 +425,32 @@ const seedData = {
       user1Id: '1',
       user2Id: '6',
       postId: '6',
-      createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-      updatedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      createdAt: daysAgoAtKst(2, 14, 10),
+      updatedAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
     },
     {
       id: '2',
       user1Id: '5',
       user2Id: '6',
       postId: '2',
-      createdAt: new Date(Date.now() - 1000 * 60 * 110).toISOString(),
-      updatedAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+      createdAt: daysAgoAtKst(1, 18, 10),
+      updatedAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
     },
     {
       id: '3',
       user1Id: '1',
       user2Id: '2',
       postId: '1',
-      createdAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(),
+      createdAt: daysAgoAtKst(1, 13, 0),
       updatedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    },
+    {
+      id: '4',
+      user1Id: '3',
+      user2Id: '6',
+      postId: '4',
+      createdAt: daysAgoAtKst(1, 20, 0),
+      updatedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
     },
   ],
   messages: [
@@ -434,7 +461,7 @@ const seedData = {
       content:
         '안녕하세요 기영님! 교내 캠퍼스 서비스 리디자인 프로젝트 지원서 잘 읽어보았습니다.',
       isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+      createdAt: daysAgoAtKst(2, 14, 10),
     },
     {
       id: '2',
@@ -443,7 +470,8 @@ const seedData = {
       content:
         '안녕하세요 서연님! 승인해 주셔서 감사합니다. 첫 킥오프 회의 일정이 언제인지 여쭤봐도 될까요?',
       isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+      createdAt: daysAgoAtKst(1, 11, 20),
+      updatedAt: daysAgoAtKst(1, 11, 25),
     },
     {
       id: '3',
@@ -451,26 +479,26 @@ const seedData = {
       senderId: '1',
       content:
         '이번 주 금요일 오후 4시에 학생회관 3층 라운지에서 진행하려고 합니다!',
-      isRead: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      isRead: true,
+      createdAt: daysAgoAtKst(1, 15, 40),
     },
     {
       id: '4',
-      conversationId: '2',
-      senderId: '5',
-      content:
-        '기영님, 일본어 교양 시험 대비 스터디 지원서 보완해서 다시 제출했습니다!',
+      conversationId: '1',
+      senderId: '6',
+      content: '삭제된 메시지입니다.',
       isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 11).toISOString(),
+      createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+      deletedAt: new Date(Date.now() - 1000 * 60 * 33).toISOString(),
     },
     {
       id: '5',
-      conversationId: '2',
+      conversationId: '1',
       senderId: '6',
       content:
-        '네 희서님! 확인했습니다. 매주 화·목 오후 6시 도서관 스터디룸에서 뵈어요.',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+        '금요일 오후 4시 학생회관 3층으로 꼭 참석하겠습니다! 혹시 미리 준비해 갈 자료가 있을까요?',
+      isRead: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
     },
     {
       id: '6',
@@ -479,7 +507,7 @@ const seedData = {
       content:
         '안녕하세요! 2026 AI 서비스 해커톤 기획 파트로 지원한 박준혁입니다.',
       isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(),
+      createdAt: daysAgoAtKst(1, 13, 0),
     },
     {
       id: '7',
@@ -489,6 +517,50 @@ const seedData = {
         '반갑습니다 준혁님! 기획 포트폴리오 관련해서 궁금한 점이 있어 연락드렸습니다.',
       isRead: true,
       createdAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    },
+    {
+      id: '8',
+      conversationId: '2',
+      senderId: '5',
+      content:
+        '기영님, 일본어 교양 시험 대비 스터디 지원서 보완해서 다시 제출했습니다!',
+      isRead: true,
+      createdAt: daysAgoAtKst(1, 18, 10),
+    },
+    {
+      id: '9',
+      conversationId: '2',
+      senderId: '6',
+      content:
+        '네 희서님! 확인했습니다. 매주 화·목 오후 6시 도서관 스터디룸에서 뵈어요.',
+      isRead: true,
+      createdAt: daysAgoAtKst(1, 19, 5),
+    },
+    {
+      id: '10',
+      conversationId: '2',
+      senderId: '5',
+      content: '혹시 첫 모임 때 단어장 출력물도 챙겨가야 할까요?',
+      isRead: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+    },
+    {
+      id: '11',
+      conversationId: '4',
+      senderId: '3',
+      content:
+        '안녕하세요! 고급웹프로그래밍 팀플 지원했는데 관련 기술 스택 문의드립니다.',
+      isRead: true,
+      createdAt: daysAgoAtKst(1, 20, 0),
+    },
+    {
+      id: '12',
+      conversationId: '4',
+      senderId: '3',
+      content: '삭제된 메시지입니다.',
+      isRead: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+      deletedAt: new Date(Date.now() - 1000 * 60 * 42).toISOString(),
     },
   ],
 };
@@ -556,28 +628,6 @@ async function seedDatabase() {
       );
     }
 
-    for (const noti of seedData.notifications) {
-      await client.query(
-        `INSERT INTO notifications (
-           id, recipient_id, post_id, application_id,
-           type, title, message, is_read, created_at
-         )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         ON CONFLICT (id) DO NOTHING`,
-        [
-          Number(noti.id),
-          Number(noti.recipientId),
-          Number(noti.postId),
-          Number(noti.applicationId),
-          noti.type,
-          noti.title,
-          noti.message,
-          noti.isRead,
-          noti.createdAt,
-        ]
-      );
-    }
-
     for (const conv of seedData.conversations) {
       await client.query(
         `INSERT INTO conversations (
@@ -599,9 +649,9 @@ async function seedDatabase() {
     for (const msg of seedData.messages) {
       await client.query(
         `INSERT INTO messages (
-           id, conversation_id, sender_id, content, is_read, created_at, updated_at
+           id, conversation_id, sender_id, content, is_read, created_at, updated_at, deleted_at
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (id) DO NOTHING`,
         [
           Number(msg.id),
@@ -611,6 +661,30 @@ async function seedDatabase() {
           Boolean(msg.isRead),
           msg.createdAt,
           msg.updatedAt || null,
+          msg.deletedAt || null,
+        ]
+      );
+    }
+
+    for (const noti of seedData.notifications) {
+      await client.query(
+        `INSERT INTO notifications (
+           id, recipient_id, post_id, application_id, conversation_id,
+           type, title, message, is_read, created_at
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          Number(noti.id),
+          Number(noti.recipientId),
+          noti.postId ? Number(noti.postId) : null,
+          noti.applicationId ? Number(noti.applicationId) : null,
+          noti.conversationId ? Number(noti.conversationId) : null,
+          noti.type,
+          noti.title,
+          noti.message,
+          noti.isRead,
+          noti.createdAt,
         ]
       );
     }
