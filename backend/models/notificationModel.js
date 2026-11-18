@@ -1,63 +1,96 @@
-const store = require('../store');
+const db = require('../db');
+
+function mapNotificationRow(row) {
+  if (!row) return null;
+  return {
+    id: String(row.id),
+    recipientId: String(row.recipient_id),
+    postId: row.post_id ? String(row.post_id) : '',
+    applicationId: row.application_id ? String(row.application_id) : '',
+    type: row.type,
+    title: row.title,
+    message: row.message,
+    isRead: Boolean(row.is_read),
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+  };
+}
 
 const notificationModel = {
-  findByRecipientId(recipientId) {
-    if (!recipientId) return [];
-    return store.notifications
-      .filter((n) => n.recipientId === String(recipientId))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  async findByRecipientId(recipientId) {
+    const { rows } = await db.query(
+      `SELECT *
+       FROM notifications
+       WHERE recipient_id = $1
+       ORDER BY created_at DESC`,
+      [recipientId]
+    );
+    return rows.map(mapNotificationRow);
   },
 
-  countUnreadByRecipientId(recipientId) {
-    if (!recipientId) return 0;
-    return store.notifications.filter(
-      (n) => n.recipientId === String(recipientId) && !n.isRead
-    ).length;
+  async countUnreadByRecipientId(recipientId) {
+    const { rows } = await db.query(
+      `SELECT COUNT(*)::int AS count
+       FROM notifications
+       WHERE recipient_id = $1 AND is_read = FALSE`,
+      [recipientId]
+    );
+    return rows[0]?.count ?? 0;
   },
 
-  findById(id) {
-    return store.notifications.find((n) => n.id === String(id)) || null;
+  async findById(id) {
+    const { rows } = await db.query(
+      'SELECT * FROM notifications WHERE id = $1',
+      [id]
+    );
+    return mapNotificationRow(rows[0]);
   },
 
-  create({ recipientId, postId, applicationId = '', type, title, message }) {
-    const newNotification = {
-      id: `noti-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      recipientId: String(recipientId),
-      postId: postId ? String(postId) : '',
-      applicationId: applicationId ? String(applicationId) : '',
-      type,
-      title,
-      message,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    store.notifications.push(newNotification);
-    return newNotification;
+  async create({
+    recipientId,
+    postId = null,
+    applicationId = null,
+    type,
+    title,
+    message,
+  }) {
+    const { rows } = await db.query(
+      `INSERT INTO notifications (
+         recipient_id, post_id, application_id, type, title, message, is_read
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, FALSE)
+       RETURNING *`,
+      [recipientId, postId || null, applicationId || null, type, title, message]
+    );
+    return mapNotificationRow(rows[0]);
   },
 
-  markAsRead(id) {
-    const notification = this.findById(id);
-    if (!notification) return null;
-    notification.isRead = true;
-    return notification;
+  async markAsRead(id) {
+    const { rows } = await db.query(
+      `UPDATE notifications
+       SET is_read = TRUE
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+    return mapNotificationRow(rows[0]);
   },
 
-  markAllAsRead(recipientId) {
-    const targetId = String(recipientId);
-    store.notifications.forEach((n) => {
-      if (n.recipientId === targetId) {
-        n.isRead = true;
-      }
-    });
-    return this.findByRecipientId(targetId);
+  async markAllAsRead(recipientId) {
+    await db.query(
+      `UPDATE notifications
+       SET is_read = TRUE
+       WHERE recipient_id = $1 AND is_read = FALSE`,
+      [recipientId]
+    );
+    return this.findByRecipientId(recipientId);
   },
 
-  removeById(id) {
-    const index = store.notifications.findIndex((n) => n.id === String(id));
-    if (index === -1) return false;
-    store.notifications.splice(index, 1);
-    return true;
+  async removeById(id) {
+    const { rowCount } = await db.query(
+      'DELETE FROM notifications WHERE id = $1',
+      [id]
+    );
+    return rowCount > 0;
   },
 };
 

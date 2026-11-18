@@ -17,22 +17,13 @@ function NotificationDropdown({
   onDelete,
   onClose,
 }) {
-  const [filter, setFilter] = useState(() => {
-    try {
-      const saved = window.sessionStorage.getItem(STORAGE_KEY_NOTI_FILTER);
-      return saved === "unread" || saved === "all" ? saved : "all";
-    } catch {
-      return "all";
-    }
-  });
+  const [filter, setFilter] = useState(
+    () => window.sessionStorage.getItem(STORAGE_KEY_NOTI_FILTER) || "all"
+  );
 
   const handleFilterChange = (nextFilter) => {
     setFilter(nextFilter);
-    try {
-      window.sessionStorage.setItem(STORAGE_KEY_NOTI_FILTER, nextFilter);
-    } catch {
-      // ignore storage errors
-    }
+    window.sessionStorage.setItem(STORAGE_KEY_NOTI_FILTER, nextFilter);
   };
 
   const filteredList =

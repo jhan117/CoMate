@@ -31,63 +31,30 @@ export function usePostApplication(postId, externalUser = null) {
   const [highlightedAppId, setHighlightedAppId] = useState(null);
   const [scrollTrigger, setScrollTrigger] = useState(0);
 
-  const filterStorageKey = `comate:app-filter:${postId}`;
+  const statusStorageKey = `comate:app-status:${postId}`;
+  const deptStorageKey = `comate:app-dept:${postId}`;
 
-  const [statusFilter, setStatusFilterState] = useState(() => {
-    try {
-      const saved = JSON.parse(
-        window.sessionStorage.getItem(filterStorageKey) || "{}"
-      );
-      return saved.status || "all";
-    } catch {
-      return "all";
-    }
-  });
-  const [deptFilter, setDeptFilterState] = useState(() => {
-    try {
-      const saved = JSON.parse(
-        window.sessionStorage.getItem(filterStorageKey) || "{}"
-      );
-      return saved.dept || "all";
-    } catch {
-      return "all";
-    }
-  });
+  const [statusFilter, setStatusFilterState] = useState(
+    () => window.sessionStorage.getItem(statusStorageKey) || "all"
+  );
+  const [deptFilter, setDeptFilterState] = useState(
+    () => window.sessionStorage.getItem(deptStorageKey) || "all"
+  );
 
   const setStatusFilter = useCallback(
     (nextStatus) => {
       setStatusFilterState(nextStatus);
-      try {
-        const prev = JSON.parse(
-          window.sessionStorage.getItem(filterStorageKey) || "{}"
-        );
-        window.sessionStorage.setItem(
-          filterStorageKey,
-          JSON.stringify({ ...prev, status: nextStatus })
-        );
-      } catch {
-        // ignore storage errors
-      }
+      window.sessionStorage.setItem(statusStorageKey, nextStatus);
     },
-    [filterStorageKey]
+    [statusStorageKey]
   );
 
   const setDeptFilter = useCallback(
     (nextDept) => {
       setDeptFilterState(nextDept);
-      try {
-        const prev = JSON.parse(
-          window.sessionStorage.getItem(filterStorageKey) || "{}"
-        );
-        window.sessionStorage.setItem(
-          filterStorageKey,
-          JSON.stringify({ ...prev, dept: nextDept })
-        );
-      } catch {
-        // ignore storage errors
-      }
+      window.sessionStorage.setItem(deptStorageKey, nextDept);
     },
-    [filterStorageKey]
+    [deptStorageKey]
   );
 
   const loadPageData = useCallback(async () => {
@@ -186,6 +153,7 @@ export function usePostApplication(postId, externalUser = null) {
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
+        window.history.replaceState(null, "", window.location.pathname);
       }, 60);
     }, 50);
 

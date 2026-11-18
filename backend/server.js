@@ -1,5 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const db = require('./db');
 const applicationsRouter = require('./routes/applications');
 const notificationsRouter = require('./routes/notifications');
 const postsRouter = require('./routes/posts');
@@ -55,6 +57,18 @@ app.use('/api/applications', applicationsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/posts', postsRouter);
 
-app.listen(PORT, () => {
-  console.log(`CoMate 백엔드 서버 실행 중: http://localhost:${PORT}`);
+app.use((err, req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ message: '서버 내부 오류가 발생했습니다.' });
 });
+
+db.initDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`CoMate 백엔드 서버 실행 중: http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('데이터베이스 초기화 실패:', error);
+    process.exit(1);
+  });
