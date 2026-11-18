@@ -56,7 +56,7 @@ function connectSocket(baseUrl, cookie = '') {
 
 async function run() {
   await withServer(async (baseUrl) => {
-    // 1. 비로그인 상태에서 /api/messages 라우트 접근 시 401 및 Socket 핸드셰이크 차단
+    // 1. 비로그인 시 /api/messages 및 소켓 연결 차단
     const unauthConv = await request(baseUrl, '/api/messages/conversations');
     assert.equal(unauthConv.status, 401, '비로그인 대화방 목록 조회는 401이어야 합니다.');
 
@@ -66,7 +66,7 @@ async function run() {
       '비로그인 Socket.IO 연결은 UNAUTHORIZED로 거절되어야 합니다.'
     );
 
-    // 2. 권기영(id=6), 김희서(id=5), 박준혁(id=2) 각각 로그인
+    // 2. 권기영(6), 김희서(5), 박준혁(2) 로그인
     const kayeLogin = await loginAs(baseUrl, '26110091', '123');
     assert.equal(kayeLogin.status, 200);
     const kayeCookie = kayeLogin.cookie;
@@ -79,7 +79,7 @@ async function run() {
     assert.equal(thirdLogin.status, 200);
     const thirdCookie = thirdLogin.cookie;
 
-    // 2-1. 전체 회원 목록 조회(/api/messages/recipients)는 제공하지 않음을 확인 (404)
+    // 전체 회원 조회 API 미제공 확인
     const removedRecipientsRes = await request(
       baseUrl,
       '/api/messages/recipients',
@@ -92,7 +92,7 @@ async function run() {
       '전체 사용자 검색(/api/messages/recipients)은 제거되어 404여야 합니다.'
     );
 
-    // 3. 제3자(권기영, id=6)가 타인 간 대화방(Conversation 3: 1 <-> 2) 열람·읽음·전송·수정·삭제 시도 -> 모두 403
+    // 3. 제3자(권기영)가 타인 대화방(Conversation 3) 접근 시도 -> 403
     const spoofList = await request(
       baseUrl,
       '/api/messages/conversations?userId=1',
@@ -153,7 +153,7 @@ async function run() {
     );
     assert.equal(deleteOtherMsg.status, 403, '타인 메시지 삭제는 403이어야 합니다.');
 
-    // 4. 본인에게 대화방 생성 시도 -> 400 차단
+    // 4. 본인에게 대화방 생성 차단 (400)
     const selfConvRes = await request(
       baseUrl,
       '/api/messages/conversations',
@@ -165,7 +165,7 @@ async function run() {
     );
     assert.equal(selfConvRes.status, 400, '본인과의 대화방 생성은 400이어야 합니다.');
 
-    // 5. 실시간 Socket.IO 격리, 읽음 처리, 알림 연동 및 Full CRUD 검증
+    // 5. Socket.IO 격리, 읽음 처리, 알림 연동, CRUD 검증
     const kayeSocket = await connectSocket(baseUrl, kayeCookie);
     const ellaSocket = await connectSocket(baseUrl, ellaCookie);
     const thirdSocket = await connectSocket(baseUrl, thirdCookie);
@@ -208,7 +208,7 @@ async function run() {
       );
       assert.equal(createdMsg.isRead, false, '초기 전송 상태는 안 읽음(false)이어야 합니다.');
 
-      // 상대방(김희서) 소켓에는 실시간 도착해야 하며, 제3자(박준혁) 소켓에는 도착하면 안 됨
+      // 상대방(김희서)만 수신하고 제3자(박준혁) 소켓은 미수신 확인
       const ellaRealtimePayload = await ellaReceivedPromise;
       assert.equal(ellaRealtimePayload.chatMessage.id, createdMsg.id);
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -218,7 +218,7 @@ async function run() {
         '제3자 소켓에는 타인의 실시간 쪽지 이벤트가 전달되면 안 됩니다.'
       );
 
-      // 상대방(김희서) 알림 벨에 message_new 알림이 생성되었는지 확인
+      // 김희서 알림 벨에 message_new 생성 확인
       const ellaNotiBeforeRead = await request(
         baseUrl,
         '/api/notifications',
@@ -234,7 +234,7 @@ async function run() {
       );
       assert.ok(unreadMsgNoti, '수신자에게 안 읽은 message_new 알림이 생성되어야 합니다.');
 
-      // 상대방(김희서)이 대화방을 읽으면 message:read 이벤트가 권기영에게 전달되고 알림도 읽음 처리됨
+      // 김희서 읽음 처리 -> 권기영 message:read 수신 + 알림 읽음 처리
       const markReadRes = await request(
         baseUrl,
         `/api/messages/conversations/${SHARED_CONVERSATION_ID}/read`,
@@ -268,7 +268,7 @@ async function run() {
         '대화방을 읽으면 해당 대화방의 message_new 알림도 함께 읽음 처리되어야 합니다.'
       );
 
-      // 같은 대화방의 상대방(김희서)이라 하더라도 권기영이 보낸 메시지를 수정·삭제할 수 없어야 함 (403)
+      // 수신자는 발신자 메시지 수정·삭제 불가 (403)
       const recipientEditAttempt = await request(
         baseUrl,
         `/api/messages/${createdMsg.id}`,
@@ -296,7 +296,7 @@ async function run() {
         '대화 상대방이라도 본인이 작성하지 않은 메시지는 삭제할 수 없어야 합니다 (403).'
       );
 
-      // 발신자 본인(권기영)이 동일 내용으로 수정 시 409, 새 내용으로 수정 시 200, 삭제 시 200
+      // 본인 메시지 수정/삭제 (동일 내용 409, 수정 200, 삭제 200)
       const sameContentEdit = await request(
         baseUrl,
         `/api/messages/${createdMsg.id}`,
@@ -334,7 +334,7 @@ async function run() {
         '삭제된 메시지는 내용만 "삭제된 메시지입니다."로 대체되어야 합니다.'
       );
 
-      // 삭제된 메시지에 대한 재수정/재삭제 시도는 409로 차단
+      // 삭제 후 재수정/재삭제 차단 (409)
       const editAfterDelete = await request(
         baseUrl,
         `/api/messages/${createdMsg.id}`,
@@ -354,7 +354,7 @@ async function run() {
       );
       assert.equal(deleteAfterDelete.status, 409, '이미 삭제된 메시지 재삭제 시도는 409여야 합니다.');
 
-      // 탭별 알림 일괄 읽음/삭제 및 스푸핑 차단 검증
+      // 탭별 알림 삭제 & 스푸핑 차단
       const invalidFilterRes = await request(
         baseUrl,
         '/api/notifications?filter=invalid_tab',
@@ -388,7 +388,7 @@ async function run() {
       await db.pool.end();
     }
 
-    // 6. 로그아웃 후 기존 세션 쿠키로 REST 및 Socket.IO 재연결 차단 확인
+    // 6. 로그아웃 후 구 쿠키 REST/소켓 재사용 차단
     const logoutRes = await request(
       baseUrl,
       '/api/auth/logout',
