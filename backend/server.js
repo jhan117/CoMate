@@ -1,4 +1,6 @@
 require('dotenv').config();
+const fs = require('node:fs');
+const path = require('node:path');
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
@@ -28,7 +30,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionSecret = process.env.COMATE_SESSION_SECRET;
+const sessionSecret =
+  process.env.COMATE_SESSION_SECRET || process.env.SESSION_SECRET;
 
 if (!sessionSecret) {
   throw new Error('COMATE_SESSION_SECRET 환경 변수를 설정해 주세요.');
@@ -57,6 +60,17 @@ app.use('/api/applications', applicationsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/posts', postsRouter);
 
+const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(frontendDistPath, 'index.html'));
+    }
+    next();
+  });
+}
+
 app.use((err, req, res, _next) => {
   console.error(err);
   res.status(500).json({ message: '서버 내부 오류가 발생했습니다.' });
@@ -65,7 +79,7 @@ app.use((err, req, res, _next) => {
 db.initDatabase()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`CoMate 백엔드 서버 실행 중: http://localhost:${PORT}`);
+      console.log(`CoMate 서버 실행 중: http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
