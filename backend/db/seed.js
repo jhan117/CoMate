@@ -10,13 +10,20 @@ function daysAgoAtKst(daysAgo, hour, minute) {
   return new Date(kstNow.getTime() - kstOffsetMs).toISOString();
 }
 
+function deadlineOffsetKst(offsetDays) {
+  const kstOffsetMs = 9 * 60 * 60 * 1000;
+  const kstDate = new Date(Date.now() + kstOffsetMs);
+  kstDate.setUTCDate(kstDate.getUTCDate() + offsetDays);
+  return kstDate.toISOString().slice(0, 10);
+}
+
 const seedData = {
   users: [
     { id: '1', studentId: '24100412', name: '이서연', dept: '디자인학과' },
     { id: '2', studentId: '24100815', name: '박준혁', dept: '경영학과' },
     { id: '3', studentId: '23100521', name: '최민수', dept: '컴퓨터공학과' },
     { id: '4', studentId: '25100319', name: '정다은', dept: '미디어학과' },
-    { id: '5', studentId: '26000000', name: '김희서', dept: '컴퓨터공학과' },
+    { id: '5', studentId: '26110093', name: '김희서', dept: '컴퓨터공학과' },
     { id: '6', studentId: '26110091', name: '권기영', dept: '컴퓨터공학과' },
   ],
   posts: [
@@ -33,7 +40,7 @@ const seedData = {
         { deptName: '디자인학과', currentMembers: 0, maxMembers: 2 },
         { deptName: '학과 무관', currentMembers: 0, maxMembers: 1 },
       ],
-      deadline: '2026-11-30',
+      deadline: deadlineOffsetKst(11),
     },
     {
       id: '2',
@@ -47,7 +54,7 @@ const seedData = {
         { deptName: '학과 무관', currentMembers: 1, maxMembers: 3 },
         { deptName: '컴퓨터공학과', currentMembers: 0, maxMembers: 1 },
       ],
-      deadline: '2026-11-25',
+      deadline: deadlineOffsetKst(2),
     },
     {
       id: '3',
@@ -61,7 +68,7 @@ const seedData = {
         { deptName: '컴퓨터공학과', currentMembers: 0, maxMembers: 2 },
         { deptName: '학과 무관', currentMembers: 1, maxMembers: 3 },
       ],
-      deadline: '2026-12-10',
+      deadline: deadlineOffsetKst(0),
     },
     {
       id: '4',
@@ -75,7 +82,7 @@ const seedData = {
         { deptName: '컴퓨터공학과', currentMembers: 1, maxMembers: 2 },
         { deptName: '디자인학과', currentMembers: 1, maxMembers: 1 },
       ],
-      deadline: '2026-11-28',
+      deadline: deadlineOffsetKst(9),
     },
     {
       id: '5',
@@ -88,7 +95,7 @@ const seedData = {
       departments: [
         { deptName: '컴퓨터공학과', currentMembers: 1, maxMembers: 4 },
       ],
-      deadline: '2026-12-05',
+      deadline: deadlineOffsetKst(3),
     },
     {
       id: '6',
@@ -102,7 +109,7 @@ const seedData = {
         { deptName: '컴퓨터공학과', currentMembers: 1, maxMembers: 2 },
         { deptName: '디자인학과', currentMembers: 1, maxMembers: 2 },
       ],
-      deadline: '2026-11-29',
+      deadline: deadlineOffsetKst(10),
     },
     {
       id: '7',
@@ -116,7 +123,7 @@ const seedData = {
         { deptName: '경영학과', currentMembers: 1, maxMembers: 2 },
         { deptName: '학과 무관', currentMembers: 0, maxMembers: 1 },
       ],
-      deadline: '2026-12-01',
+      deadline: deadlineOffsetKst(14),
     },
     {
       id: '8',
@@ -130,7 +137,7 @@ const seedData = {
         { deptName: '컴퓨터공학과', currentMembers: 2, maxMembers: 2 },
         { deptName: '학과 무관', currentMembers: 1, maxMembers: 1 },
       ],
-      deadline: '2026-11-22',
+      deadline: deadlineOffsetKst(-2),
     },
   ],
   applications: [
