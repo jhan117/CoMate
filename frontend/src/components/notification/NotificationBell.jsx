@@ -4,7 +4,7 @@ import NotificationDropdown from "./NotificationDropdown";
 import MyActivityDropdown from "./MyActivityDropdown";
 import styles from "./NotificationBell.module.css";
 
-function NotificationBell({ currentUser = null }) {
+function NotificationBell({ currentUser }) {
   const [open, setOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const wrapperRef = useRef(null);

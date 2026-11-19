@@ -20,7 +20,6 @@ async function create({ studentId, name, dept, password }) {
   const salt = randomBytes(16).toString('hex');
   const key = await deriveKey(password, salt, 64);
 
-  // 해시를 계산하는 동안 같은 학번으로 가입했는지 저장 직전에 확인한다.
   if (findByStudentId(studentId)) return null;
 
   const user = {
@@ -37,8 +36,11 @@ async function create({ studentId, name, dept, password }) {
 }
 
 async function verifyPassword(user, password) {
-  if (!user.passwordHash) {
-    return user.password === password;
+  if (!user.passwordHash || !user.passwordSalt) {
+    return process.env.NODE_ENV !== 'production' &&
+      !process.env.RENDER &&
+      typeof user.password === 'string' &&
+      user.password === password;
   }
 
   const expected = Buffer.from(user.passwordHash, 'hex');

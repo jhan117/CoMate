@@ -19,7 +19,7 @@ dotenv.config({
 const db = require('../backend/db');
 
 // 시드 데이터 기준:
-// - Conversation 2: 김희서(id=5, 26000000) <-> 권기영(id=6, 26110091)
+// - Conversation 2: 김희서(id=5, 26110093) <-> 권기영(id=6, 26110091)
 // - Conversation 3: 이서연(id=1, 24100412) <-> 박준혁(id=2, 24100815), Message 6 (sender=2)
 const OTHER_CONVERSATION_ID = '3';
 const OTHER_MESSAGE_ID = '6';
@@ -71,7 +71,7 @@ async function run() {
     assert.equal(kayeLogin.status, 200);
     const kayeCookie = kayeLogin.cookie;
 
-    const ellaLogin = await loginAs(baseUrl, '26000000', '123');
+    const ellaLogin = await loginAs(baseUrl, '26110093', '123');
     assert.equal(ellaLogin.status, 200);
     const ellaCookie = ellaLogin.cookie;
 

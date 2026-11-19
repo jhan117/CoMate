@@ -38,7 +38,15 @@ const sessionSecret =
   process.env.COMATE_SESSION_SECRET || process.env.SESSION_SECRET;
 
 if (!sessionSecret) {
-  throw new Error('COMATE_SESSION_SECRET 환경 변수를 설정해 주세요.');
+  throw new Error(
+    'COMATE_SESSION_SECRET 또는 SESSION_SECRET 환경 변수를 설정해야 합니다.'
+  );
+}
+
+if (sessionSecret.length < 32) {
+  throw new Error(
+    '세션 비밀키는 32자 이상이어야 합니다.'
+  );
 }
 
 const sessionMiddleware = session({
