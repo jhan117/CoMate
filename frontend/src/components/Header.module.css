@@ -29,6 +29,44 @@
   gap: 10px;
 }
 
+.messageNavLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.messageNavLink:hover,
+.messageNavLinkActive {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.messageNavLinkActive {
+  background-color: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4f46e5;
+}
+
+.messageNavIcon {
+  width: 16px;
+  height: 16px;
+  color: #4f46e5;
+}
+
+.messageNavLabel {
+  line-height: 1;
+}
+
 .logo {
   display: inline-flex;
   align-items: center;
@@ -55,4 +93,26 @@
   color: #6b7280;
   padding-left: 12px;
   border-left: 1.5px solid #e5e7eb;
+}
+
+@media (max-width: 720px) {
+  .inner {
+    padding: 12px 16px;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  .rightActions {
+    gap: 8px;
+  }
+
+  .messageNavLink {
+    padding: 8px 10px;
+  }
+
+  .messageNavLabel {
+    display: none;
+  }
 }

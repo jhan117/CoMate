@@ -1,0 +1,61 @@
+.pageWrapper {
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 24px 28px;
+}
+
+.loadingText {
+  text-align: center;
+  padding: 48px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loginRequiredCard {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.splitLayout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  height: clamp(480px, calc(100dvh - 170px), 700px);
+  min-height: 480px;
+}
+
+.listPane,
+.threadPane {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .pageWrapper {
+    padding: 16px 16px 24px;
+  }
+
+  .splitLayout {
+    grid-template-columns: 1fr;
+    height: clamp(460px, calc(100dvh - 140px), 680px);
+  }
+
+  .splitLayout:not(.hasSelection) .threadPane {
+    display: none;
+  }
+
+  .splitLayout.hasSelection .listPane {
+    display: none;
+  }
+}

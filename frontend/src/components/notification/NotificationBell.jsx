@@ -1,19 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "../../hooks/useNotifications";
 import NotificationDropdown from "./NotificationDropdown";
+import MyActivityDropdown from "./MyActivityDropdown";
 import styles from "./NotificationBell.module.css";
 
 function NotificationBell({ currentUser = null }) {
   const [open, setOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  const { activeUser, notifications, unreadCount, actions } =
+  const { activeUser, notifications, unreadCount, error, actions } =
     useNotifications(currentUser);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setOpen(false);
+        setActivityOpen(false);
       }
     };
 
@@ -25,20 +28,20 @@ function NotificationBell({ currentUser = null }) {
 
   const handleToggle = () => {
     const nextOpen = !open;
+    setActivityOpen(false);
     setOpen(nextOpen);
     if (nextOpen) {
       actions.refresh();
     }
   };
 
+  const handleToggleActivity = () => {
+    setOpen(false);
+    setActivityOpen((prev) => !prev);
+  };
+
   return (
     <div className={styles.bellWrapper} ref={wrapperRef}>
-      {activeUser && (
-        <span className={styles.currentUserBadge}>
-          <strong>{activeUser.name}</strong> 님 ({activeUser.dept})
-        </span>
-      )}
-
       <button
         type="button"
         className={`${styles.bellBtn} ${open ? styles.bellBtnActive : ""}`}
@@ -65,14 +68,39 @@ function NotificationBell({ currentUser = null }) {
         )}
       </button>
 
+      {activeUser && (
+        <button
+          type="button"
+          className={`${styles.currentUserBadge} ${
+            activityOpen ? styles.bellBtnActive : ""
+          }`}
+          aria-label="내 모집 및 지원 현황 열기"
+          aria-expanded={activityOpen}
+          onClick={handleToggleActivity}
+        >
+          <strong>{activeUser.name}</strong>{" "}
+          <span className={styles.userHonorific}>님</span>{" "}
+          <span className={styles.userDeptText}>({activeUser.dept}) · </span>
+          <span className={styles.hubTriggerLabel}>내 모집·지원 ▾</span>
+          <span className={styles.hubTriggerCompact}>▾</span>
+        </button>
+      )}
+
+      {activityOpen && activeUser && (
+        <MyActivityDropdown onClose={() => setActivityOpen(false)} />
+      )}
+
       {open && (
         <NotificationDropdown
           activeUser={activeUser}
           notifications={notifications}
           unreadCount={unreadCount}
+          error={error}
           onRead={actions.markAsRead}
           onReadAll={actions.markAllAsRead}
+          onDeleteAll={actions.removeAll}
           onDelete={actions.remove}
+          onClearError={actions.clearError}
           onClose={() => setOpen(false)}
         />
       )}

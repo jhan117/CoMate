@@ -13,19 +13,29 @@ function ApplicationForm({
   currentUser,
   existingApplication,
   submitting,
-  canceling,
   onSubmit,
-  onCancel,
+  onCancelRevision,
 }) {
   const isRevisionMode =
     existingApplication &&
     existingApplication.status === APPLICATION_STATUS.REVISION_REQUESTED;
 
   const firstAvailable = getFirstAvailableDeptName(post.departments);
+  const isAllDeptsFull = post.departments.every((d) => isDeptFull(d));
 
-  const [targetDept, setTargetDept] = useState(
-    isRevisionMode ? existingApplication.targetDept : firstAvailable
-  );
+  const initialDept = (() => {
+    if (isRevisionMode && existingApplication?.targetDept) {
+      const targetObj = post.departments.find(
+        (d) => d.deptName === existingApplication.targetDept
+      );
+      if (targetObj && !isDeptFull(targetObj)) {
+        return existingApplication.targetDept;
+      }
+    }
+    return firstAvailable;
+  })();
+
+  const [targetDept, setTargetDept] = useState(initialDept);
   const [message, setMessage] = useState(
     isRevisionMode ? existingApplication.message : ""
   );
@@ -95,7 +105,17 @@ function ApplicationForm({
         </div>
       )}
 
-      {errorMsg && <Callout variant="danger">{errorMsg}</Callout>}
+      {isAllDeptsFull && (
+        <Callout variant="danger" title="모집 정원 마감 안내">
+          모든 모집 부문의 정원이 마감되어 현재 지원서를 제출할 수 없습니다.
+        </Callout>
+      )}
+
+      {errorMsg && (
+        <Callout variant="danger" onClose={() => setErrorMsg("")}>
+          {errorMsg}
+        </Callout>
+      )}
 
       <div className={styles.fieldGroup}>
         <label className={styles.label}>
@@ -138,13 +158,16 @@ function ApplicationForm({
           <label className={styles.label} htmlFor="message">
             지원 동기 및 자기소개 <span className={styles.required}>*</span>
           </label>
-          <span className={styles.charCount}>{message.length}자</span>
+          <span className={styles.charCount}>
+            {message.length} / 1,000자 (최소 5자)
+          </span>
         </div>
         <textarea
           id="message"
           rows={6}
+          maxLength={1000}
           className={styles.textarea}
-          placeholder="간단한 자기소개, 가능한 역할 및 지원 동기를 작성해 주세요."
+          placeholder="간단한 자기소개, 가능한 역할 및 지원 동기를 5자 이상 작성해 주세요."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
@@ -153,20 +176,27 @@ function ApplicationForm({
       <div className={styles.formActions}>
         {isRevisionMode ? (
           <Button
-            variant="danger"
+            variant="secondary"
             size="lg"
-            disabled={canceling || submitting}
-            onClick={() => onCancel(existingApplication.id)}
+            disabled={submitting}
+            onClick={onCancelRevision}
           >
-            지원 취소
+            ← 수정 취소
           </Button>
         ) : (
           <Button as="a" href="/" variant="secondary" size="lg">
             ← 목록으로 돌아가기
           </Button>
         )}
-        <Button type="submit" variant="primary" size="lg" disabled={submitting}>
-          {submitting
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          disabled={submitting || isAllDeptsFull}
+        >
+          {isAllDeptsFull
+            ? "모집 마감"
+            : submitting
             ? "제출 중..."
             : isRevisionMode
             ? "보완 내용 제출"
