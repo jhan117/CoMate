@@ -1,28 +1,30 @@
 import { emitActiveUserChanged } from '../constants/notificationConstants';
+import { requestJson } from './httpClient';
 
-async function request(path, method = 'GET', fields) {
-  const response = await fetch(`/api/auth/${path}`, {
-    method,
-    headers: fields ? { 'Content-Type': 'application/json' } : undefined,
-    body: fields ? JSON.stringify(fields) : undefined,
-  });
+async function mutateAuth(path, fields) {
+  const data = await requestJson(
+    `/api/auth/${path}`,
+    {
+      method: 'POST',
+      ...(fields !== undefined ? { json: fields } : {}),
+    },
+    (status) => `인증 요청에 실패했습니다. (${status})`
+  );
 
-  if (response.status === 204) {
-    emitActiveUserChanged(null);
-    return;
-  }
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok || data === null) {
-    throw new Error(data?.message ?? `인증 요청에 실패했습니다. (${response.status})`);
-  }
-
-  emitActiveUserChanged(data.user ?? null);
-  return data.user;
+  const user = data?.user ?? null;
+  emitActiveUserChanged(user);
+  return user;
 }
 
-export const fetchCurrentUser = () => request('me');
-export const signup = (fields) => request('signup', 'POST', fields);
-export const login = (fields) => request('login', 'POST', fields);
-export const logout = () => request('logout', 'POST');
+export async function fetchCurrentUser() {
+  const data = await requestJson(
+    '/api/auth/me',
+    {},
+    (status) => `인증 요청에 실패했습니다. (${status})`
+  );
+  return data?.user ?? null;
+}
+
+export const signup = (fields) => mutateAuth('signup', fields);
+export const login = (fields) => mutateAuth('login', fields);
+export const logout = () => mutateAuth('logout');

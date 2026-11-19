@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { io } from "socket.io-client";
+import { fetchCurrentUser } from "../api/authApi";
 import {
   fetchNotifications,
   markNotificationAsRead,
@@ -9,9 +10,10 @@ import {
 } from "../api/notificationApi";
 import { NOTIFICATION_EVENTS } from "../constants/notificationConstants";
 
-export function useNotifications(externalUser = null) {
+export function useNotifications(externalUser) {
+  const isControlled = externalUser !== undefined;
   const [internalUser, setInternalUser] = useState(null);
-  const activeUser = externalUser !== null ? externalUser : internalUser;
+  const activeUser = isControlled ? externalUser : internalUser;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -19,21 +21,22 @@ export function useNotifications(externalUser = null) {
 
   const syncSessionUser = useCallback(async () => {
     try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const nextUser = data?.user || null;
-      setInternalUser((prev) => {
-        if (prev?.id === nextUser?.id) return prev;
-        return nextUser;
-      });
+      const nextUser = await fetchCurrentUser();
+      if (!isControlled) {
+        setInternalUser((prev) =>
+          prev?.id === nextUser?.id ? prev : nextUser
+        );
+      }
       return nextUser;
     } catch {
       return null;
     }
-  }, []);
+  }, [isControlled]);
 
   useEffect(() => {
+    if (isControlled) return undefined;
+
+    let active = true;
     const handleUserChanged = (e) => {
       setInternalUser(e.detail || null);
       setError("");
@@ -44,56 +47,68 @@ export function useNotifications(externalUser = null) {
       handleUserChanged
     );
 
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const nextUser = data?.user || null;
-        setInternalUser((prev) => (prev?.id === nextUser?.id ? prev : nextUser));
+    fetchCurrentUser()
+      .then((nextUser) => {
+        if (!active) return;
+        setInternalUser((prev) =>
+          prev?.id === nextUser?.id ? prev : nextUser
+        );
       })
       .catch(() => {});
 
     return () => {
+      active = false;
       window.removeEventListener(
         NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
         handleUserChanged
       );
     };
-  }, []);
+  }, [isControlled]);
 
   const userId = activeUser?.id;
 
-  const fetchNotificationsForUser = useCallback(async (targetUserId) => {
-    try {
-      await Promise.resolve();
-      if (!targetUserId) {
-        setNotifications([]);
-        setUnreadCount(0);
-        return;
+  const fetchNotificationsForUser = useCallback(
+    async (targetUserId) => {
+      try {
+        await Promise.resolve();
+        if (!targetUserId) {
+          setNotifications([]);
+          setUnreadCount(0);
+          return;
+        }
+        setLoading(true);
+        const data = await fetchNotifications();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount ?? 0);
+      } catch (err) {
+        if (err.status === 401) {
+          if (!isControlled) setInternalUser(null);
+          setNotifications([]);
+          setUnreadCount(0);
+        } else {
+          setError(err.message || "알림 목록을 불러오지 못했습니다.");
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(true);
-      const data = await fetchNotifications();
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount ?? 0);
-    } catch (err) {
-      if (err.status === 401) {
-        setInternalUser(null);
-        setNotifications([]);
-        setUnreadCount(0);
-      } else {
-        setError(err.message || "알림 목록을 불러오지 못했습니다.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [isControlled]
+  );
 
   const loadNotifications = useCallback(async () => {
     setError("");
-    const currentSessionUser =
-      externalUser !== null ? externalUser : await syncSessionUser();
+    const currentSessionUser = isControlled
+      ? externalUser
+      : await syncSessionUser();
     const targetUserId = currentSessionUser?.id || userId;
     await fetchNotificationsForUser(targetUserId);
-  }, [externalUser, fetchNotificationsForUser, syncSessionUser, userId]);
+  }, [
+    externalUser,
+    fetchNotificationsForUser,
+    isControlled,
+    syncSessionUser,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!userId) return;

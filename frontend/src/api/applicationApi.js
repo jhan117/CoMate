@@ -1,16 +1,4 @@
-async function requestJson(url, options = {}, defaultErrorMessage) {
-  const res = await fetch(url, {
-    credentials: "include",
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(data.message || defaultErrorMessage);
-    error.status = res.status;
-    throw error;
-  }
-  return data;
-}
+import { requestJson } from "./httpClient";
 
 export async function fetchPostApplicationData(postId) {
   return requestJson(
@@ -33,8 +21,7 @@ export async function createApplication(payload) {
     "/api/applications",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      json: payload,
     },
     "지원서 제출에 실패했습니다."
   );
@@ -45,8 +32,7 @@ export async function resubmitApplication(applicationId, payload) {
     `/api/applications/${encodeURIComponent(applicationId)}`,
     {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      json: payload,
     },
     "지원서 수정 제출에 실패했습니다."
   );
@@ -57,8 +43,7 @@ export async function updateApplicationStatus(applicationId, status, feedback = 
     `/api/applications/${encodeURIComponent(applicationId)}/status`,
     {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, feedback }),
+      json: { status, feedback },
     },
     "상태 변경에 실패했습니다."
   );

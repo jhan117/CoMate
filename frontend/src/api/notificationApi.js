@@ -1,16 +1,4 @@
-async function requestJson(url, options = {}, defaultErrorMessage) {
-  const res = await fetch(url, {
-    credentials: "include",
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(data.message || defaultErrorMessage);
-    error.status = res.status;
-    throw error;
-  }
-  return data;
-}
+import { requestJson } from "./httpClient";
 
 export async function fetchNotifications() {
   return requestJson(

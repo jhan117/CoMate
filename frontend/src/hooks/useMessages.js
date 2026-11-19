@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { fetchCurrentUser } from "../api/authApi";
 import {
   fetchConversations,
   fetchConversationDetail,
@@ -78,11 +79,9 @@ export function useMessages() {
       handleUserChanged
     );
 
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!active) return;
-        setCurrentUser(data?.user || null);
+    fetchCurrentUser()
+      .then((nextUser) => {
+        if (active) setCurrentUser(nextUser);
       })
       .catch(() => {
         if (active) setCurrentUser(null);

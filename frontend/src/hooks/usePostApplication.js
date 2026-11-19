@@ -115,14 +115,39 @@ export function usePostApplication(postId, externalUser = null) {
       loadPageData();
     };
 
+    const handleUserChanged = (e) => {
+      const nextUser = e.detail || null;
+      setSessionUser(nextUser);
+      setIsEditingRevision(false);
+      setFeedbackBanner(null);
+
+      if (!nextUser) {
+        setPost(null);
+        setApplications([]);
+        setErrorStatus(401);
+        setError("지원서를 제출하거나 지원 현황을 확인하려면 먼저 로그인해 주세요.");
+        return;
+      }
+
+      loadPageData();
+    };
+
     window.addEventListener(
       NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH,
       handleRefresh
+    );
+    window.addEventListener(
+      NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
+      handleUserChanged
     );
     return () => {
       window.removeEventListener(
         NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH,
         handleRefresh
+      );
+      window.removeEventListener(
+        NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
+        handleUserChanged
       );
     };
   }, [loadPageData]);
