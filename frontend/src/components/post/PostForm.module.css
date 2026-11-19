@@ -1,51 +1,134 @@
-
-.crudForm {
-  margin: 16px 0;
-  padding: 16px;
-  border: 1px solid #dce1e9;
-  border-radius: 12px;
+.error {
+  margin-bottom: 16px;
 }
 
-.crudFields {
-  display: grid;
-  gap: 12px;
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-width: 0;
   margin: 0;
   padding: 0;
-  border: 0;
+  border: none;
 }
 
-.crudRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: end;
-  margin: 12px 0;
-}
-
-.crudActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  margin-top: 12px;
-}
-
-.crudRow label,
-.crudFields label {
+.rowGrid {
   display: grid;
-  gap: 4px;
-  font-size: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.crudRow input,
-.crudRow select,
-.crudFields input,
-.crudFields textarea {
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field input,
+.field select,
+.field textarea {
   box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
-  padding: 8px;
-  border: 1px solid #dce1e9;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
   font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 92px;
+  line-height: 1.5;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #9ca3af;
+}
+
+.deptSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.deptHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.deptHeading {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.deptList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deptRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.deptField,
+.countField {
+  min-width: 0;
+}
+
+.removeButton {
+  height: 39px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+@media (max-width: 600px) {
+  .rowGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .deptRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .deptField {
+    grid-column: 1 / -1;
+  }
 }

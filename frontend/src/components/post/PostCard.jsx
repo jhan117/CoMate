@@ -1,19 +1,31 @@
 import { useLayoutEffect, useRef } from 'react'
+import { getSeoulDateKey } from '../../utils/applicationUtils'
 import Button from '../common/Button'
 import card from './PostCard.module.css'
 
-function deadlineLabel(deadline) {
-  const today = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Seoul',
-  }).format(new Date())
+function getDeadlineMeta(deadline) {
+  const today = getSeoulDateKey(new Date())
+  const days = Math.round((Date.parse(deadline) - Date.parse(today)) / 86400000)
 
-  const days = (Date.parse(deadline) - Date.parse(today)) / 86400000
-  if (days < 0) return '마감'
-  return days === 0 ? 'D-day' : `D-${days}`
+  if (!Number.isFinite(days)) {
+    return { label: '', variant: 'open', isClosed: false }
+  }
+  if (days < 0) {
+    return { label: '마감', variant: 'closed', isClosed: true }
+  }
+  if (days === 0) {
+    return { label: 'D-day', variant: 'urgent', isClosed: false }
+  }
+  if (days <= 3) {
+    return { label: `D-${days}`, variant: 'soon', isClosed: false }
+  }
+  return { label: `D-${days}`, variant: 'open', isClosed: false }
 }
 
-export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
+export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDelete }) {
   const detailUrl = `/posts/${encodeURIComponent(post.id)}/application`
+  const deadlineMeta = getDeadlineMeta(post.deadline)
+  const isClosed = deadlineMeta.isClosed
   const cardRef = useRef(null)
 
   useLayoutEffect(() => {
@@ -45,16 +57,18 @@ export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
 
   return (
     <article ref={cardRef} className={card.card}>
-      <a
-        href={detailUrl}
-        className={card.cardLink}
-        aria-label={`${post.title} 지원 페이지 보기`}
-      />
       <div className={card.badgeRow}>
         <span className={card.categoryBadge}>{post.category}</span>
-        <time className={card.deadlineText} dateTime={post.deadline}>
-          {deadlineLabel(post.deadline)} · {post.deadline}
-        </time>
+        <div className={card.deadlineGroup}>
+          {deadlineMeta.label && (
+            <span className={`${card.deadlineBadge} ${card[deadlineMeta.variant]}`}>
+              {deadlineMeta.label}
+            </span>
+          )}
+          <time className={card.deadlineText} dateTime={post.deadline}>
+            {post.deadline}
+          </time>
+        </div>
       </div>
 
       <h2 className={card.title}>{post.title}</h2>
@@ -78,14 +92,31 @@ export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
         ))}
       </ul>
 
-      <div className={card.cardActions}>
-        {canEdit && (
-          <>
-            <Button size="sm" disabled={busy} onClick={onEdit}>수정</Button>
-            <Button size="sm" variant="danger" disabled={busy} onClick={onDelete}>삭제</Button>
-          </>
-        )}
-      </div>
+      {isLoggedIn && (
+        <div className={card.cardActions}>
+          {canEdit ? (
+            <>
+              <Button as="a" href={detailUrl} variant="revision" size="sm">
+                지원자 관리
+              </Button>
+              <div className={card.ownerActions}>
+                <Button size="sm" disabled={busy} onClick={onEdit}>수정</Button>
+                <Button size="sm" variant="danger" disabled={busy} onClick={onDelete}>삭제</Button>
+              </div>
+            </>
+          ) : (
+            <Button
+              as="a"
+              href={detailUrl}
+              variant={isClosed ? 'secondary' : 'revision'}
+              size="sm"
+              className={card.applicantAction}
+            >
+              {isClosed ? '현황 보기' : '지원하기'}
+            </Button>
+          )}
+        </div>
+      )}
     </article>
   )
 }

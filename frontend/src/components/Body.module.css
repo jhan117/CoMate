@@ -19,6 +19,10 @@
   align-items: center;
 }
 
+.loginNotice {
+  margin-top: 8px;
+}
+
 .crudGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));

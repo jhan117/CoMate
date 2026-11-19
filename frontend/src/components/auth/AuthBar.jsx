@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { login, logout, signup } from '../../api/authApi'
 import Button from '../common/Button'
 import Callout from '../common/Callout'
+import Modal from '../common/Modal'
 import styles from './AuthBar.module.css'
 
 export default function AuthBar({ user, onUserChange, authLoading }) {
@@ -11,32 +12,16 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
 
   const signingUp = mode === 'signup'
 
-  function closeModal() {
+  const closeModal = useCallback(() => {
     if (busy) return
     setMode(null)
     setError('')
-  }
+  }, [busy])
 
   function openModal(nextMode) {
     setError('')
     setMode(nextMode)
   }
-
-  useEffect(() => {
-    if (!mode) return
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        closeModal()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [mode, busy])
 
   async function submit(event) {
     event.preventDefault()
@@ -99,83 +84,67 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
             로그인 확인 중…
           </span>
         ) : user ? (
-          <>
-            <span className={styles.userName}>
-              {user.name}님
-            </span>
-
-            <button
-              type="button"
-              variant="secondary"
-              disabled={busy}
-              onClick={signOut}
-            >
-              로그아웃
-            </button>
-          </>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={signOut}
+          >
+            로그아웃
+          </Button>
         ) : (
           <>
-            <button
+            <Button
               type="button"
-              className="secondary"
+              variant="secondary"
+              size="sm"
               onClick={() => openModal('login')}
             >
               로그인
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
-              className="primary"
+              variant="primary"
+              size="sm"
               onClick={() => openModal('signup')}
             >
               회원가입
-            </button>
+            </Button>
           </>
         )}
       </div>
 
       {!mode && error && (
         <div role="alert">
-          <Callout variant="error" className={styles.headerError}>
+          <Callout
+            variant="danger"
+            size="compact"
+            className={styles.headerError}
+            onClose={() => setError('')}
+          >
             {error}
           </Callout>
         </div>
       )}
 
-      {mode && (
-        <div
-          className={styles.overlay}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeModal()
-            }
-          }}
-        >
-          <div
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-label={signingUp ? '회원가입' : '로그인'}
-          >
-            <div className={styles.modalHeader}>
-              <h2>
-                {signingUp ? '회원가입' : '로그인'}
-              </h2>
-
-              <button
-                type="button"
-                className={styles.closeButton}
-                disabled={busy}
-                onClick={closeModal}
-                aria-label="닫기"
-              >
-                ×
-              </button>
-            </div>
+      <Modal
+        open={Boolean(mode)}
+        title={signingUp ? '회원가입' : '로그인'}
+        maxWidth={420}
+        busy={busy}
+        onClose={closeModal}
+      >
 
             {error && (
               <div role="alert">
-                <Callout variant="error" className={styles.error}>
+                <Callout
+                  variant="danger"
+                  size="compact"
+                  className={styles.error}
+                  onClose={() => setError('')}
+                >
                   {error}
                 </Callout>
               </div>
@@ -279,9 +248,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                 {signingUp ? '로그인' : '회원가입'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </>
   )
 }

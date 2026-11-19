@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import Button from "./Button";
+import Modal from "./Modal";
 import styles from "./ConfirmModal.module.css";
 
 function ConfirmModal({
@@ -14,65 +14,39 @@ function ConfirmModal({
   onConfirm,
   onCancel,
 }) {
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape" && !busy) {
-        onCancel();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, busy, onCancel]);
-
-  if (!open) return null;
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget && !busy) {
-      onCancel();
-    }
-  };
-
   return (
-    <div
-      className={styles.backdrop}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-modal-title"
-      onClick={handleBackdropClick}
+    <Modal
+      open={open}
+      title={title}
+      maxWidth={400}
+      busy={busy}
+      showCloseButton={false}
+      compact
+      onClose={onCancel}
     >
-      <div className={styles.modal}>
-        <h3 id="confirm-modal-title" className={styles.title}>
-          {title}
-        </h3>
-        {description && <p className={styles.description}>{description}</p>}
-        {preview && <p className={styles.preview}>{preview}</p>}
-        <div className={styles.actions}>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={busy}
-            onClick={onCancel}
-          >
-            {cancelLabel}
-          </Button>
-          <Button
-            type="button"
-            variant={confirmVariant}
-            size="sm"
-            disabled={busy}
-            onClick={onConfirm}
-          >
-            {busy ? "처리 중..." : confirmLabel}
-          </Button>
-        </div>
+      {description && <p className={styles.description}>{description}</p>}
+      {preview && <p className={styles.preview}>{preview}</p>}
+      <div className={styles.actions}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={busy}
+          onClick={onCancel}
+        >
+          {cancelLabel}
+        </Button>
+        <Button
+          type="button"
+          variant={confirmVariant}
+          size="sm"
+          disabled={busy}
+          onClick={onConfirm}
+        >
+          {busy ? "처리 중..." : confirmLabel}
+        </Button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
