@@ -21,26 +21,26 @@ export default function Body({ user, authLoading }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-  let active = true
+    let active = true
 
-  fetchPosts()
-    .then((data) => {
-      if (active) setPosts(data)
-    })
-    .catch((err) => {
-      if (active) setError(err.message)
-    })
-    .finally(() => {
-      if (active) setLoading(false)
-    })
+    fetchPosts()
+      .then((data) => {
+        if (active) setPosts(data)
+      })
+      .catch((err) => {
+        if (active) setError(err.message)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
 
-  return () => { active = false }
-}, [])
+    return () => { active = false }
+  }, [])
 
-useEffect(() => {
-  setEditor(null)
-  setError('')
-}, [userId])
+  useEffect(() => {
+    setEditor(null)
+    setError('')
+  }, [userId])
 
   const categories = [...new Set([...baseCategories, ...posts.map((post) => post.category)])]
   const departments = [...new Set(

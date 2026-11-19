@@ -46,7 +46,6 @@ function App() {
       {match ? <ApplicationPage postId={match[1]} /> : (
         <Body
           user={user}
-          onUserChange={handleUserChange}
           authLoading={authLoading}
         />
       )}

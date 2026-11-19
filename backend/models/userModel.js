@@ -41,7 +41,7 @@ async function verifyPassword(user, password) {
       !process.env.RENDER &&
       typeof user.password === 'string' &&
       user.password === password;
-    }
+  }
 
   const expected = Buffer.from(user.passwordHash, 'hex');
   const actual = await deriveKey(password, user.passwordSalt, expected.length);

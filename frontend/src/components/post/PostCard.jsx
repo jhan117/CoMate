@@ -14,7 +14,7 @@ function deadlineLabel(deadline) {
 
 export default function PostCard({ post, canEdit, busy, onEdit, onDelete }) {
   const detailUrl = `/posts/${encodeURIComponent(post.id)}/application`
-    const cardRef = useRef(null)
+  const cardRef = useRef(null)
 
   useLayoutEffect(() => {
     const element = cardRef.current

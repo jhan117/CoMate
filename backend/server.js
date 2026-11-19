@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express');
 const cors = require('cors');
 const applicationsRouter = require('./routes/applications');
@@ -26,23 +28,23 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionSecret = process.env.COMATE_SESSION_SECRET;
+const sessionSecret = process.env.COMATE_SESSION_SECRET || process.env.SESSION_SECRET
 
-if (isProduction && !sessionSecret) {
+if (!sessionSecret) {
   throw new Error(
-    '배포 환경에서는 COMATE_SESSION_SECRET 환경 변수를 설정해야 합니다.'
+    'COMATE_SESSION_SECRET 또는 SESSION_SECRET 환경 변수를 설정해야 합니다.'
   );
 }
 
-if (!isProduction && !sessionSecret) {
-  console.warn(
-    '개발 환경: COMATE_SESSION_SECRET이 설정되지 않아 임시 세션 키를 사용합니다.'
+if (sessionSecret.length < 32) {
+  throw new Error(
+    '세션 비밀키는 32자 이상이어야 합니다.'
   );
 }
 
 app.use(session({
   name: 'comate.sid',
-  secret: sessionSecret || 'comate-local-development-only-secret',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
