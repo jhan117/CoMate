@@ -36,7 +36,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
     }
 
     const credentials = {
-      studentId: fields.studentId,
+      email: fields.email,
       password: fields.password,
     }
 
@@ -155,17 +155,18 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                 className={styles.fields}
                 disabled={busy}
               >
+                
                 <label className={styles.field}>
-                  학번
+                  이메일
                   <input
-                    name="studentId"
+                    name="email"
+                    type="email"
                     required
-                    inputMode="numeric"
-                    pattern="[0-9]{8}"
-                    maxLength={8}
-                    autoComplete="username"
+                    maxLength={254}
+                    autoComplete="email"
                   />
                 </label>
+
 
                 <label className={styles.field}>
                   비밀번호
