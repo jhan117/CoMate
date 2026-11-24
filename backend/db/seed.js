@@ -1,6 +1,4 @@
-// bcrypt hash for '123' (cost 10)
-const DEFAULT_PASSWORD_HASH =
-  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+const bcrypt = require('bcrypt');
 
 function daysAgoAtKst(daysAgo, hour, minute) {
   const kstOffsetMs = 9 * 60 * 60 * 1000;
@@ -19,12 +17,12 @@ function deadlineOffsetKst(offsetDays) {
 
 const seedData = {
   users: [
-    { id: '1', studentId: '24100412', name: '이서연', dept: '디자인학과' },
-    { id: '2', studentId: '24100815', name: '박준혁', dept: '경영학과' },
-    { id: '3', studentId: '23100521', name: '최민수', dept: '컴퓨터공학과' },
-    { id: '4', studentId: '25100319', name: '정다은', dept: '미디어학과' },
-    { id: '5', studentId: '26110093', name: '김희서', dept: '컴퓨터공학과' },
-    { id: '6', studentId: '26110091', name: '권기영', dept: '컴퓨터공학과' },
+    { id: '1', email: 'user1@comate.test', name: '이서연', dept: '디자인학과' },
+    { id: '2', email: 'user2@comate.test', name: '박준혁', dept: '경영학과' },
+    { id: '3', email: 'user3@comate.test', name: '최민수', dept: '컴퓨터공학과' },
+    { id: '4', email: 'user4@comate.test', name: '정다은', dept: '미디어학과' },
+    { id: '5', email: 'user5@comate.test', name: '한지민', dept: '컴퓨터공학과' },
+    { id: '6', email: 'user6@comate.test', name: '오민재', dept: '컴퓨터공학과' },
   ],
   posts: [
     {
@@ -326,7 +324,7 @@ const seedData = {
       type: 'application_resubmitted',
       title: '보완 지원서 재제출',
       message:
-        "[[내 모집글 - 전체 상태 확인] 일본어 교양 수업 시험 대비 스터디원 모집] '김희서' 님이 '학과 무관' 부문 지원서를 보완하여 다시 제출했습니다.",
+        "[[내 모집글 - 전체 상태 확인] 일본어 교양 수업 시험 대비 스터디원 모집] '한지민' 님이 '학과 무관' 부문 지원서를 보완하여 다시 제출했습니다.",
       isRead: false,
       createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
     },
@@ -410,7 +408,7 @@ const seedData = {
       type: 'application_new',
       title: '신규 지원서 접수',
       message:
-        "[2026 대학생 AI 서비스 해커톤 팀원 모집] '김희서' 님이 '컴퓨터공학과' 부문에 지원했습니다.",
+        "[2026 대학생 AI 서비스 해커톤 팀원 모집] '한지민' 님이 '컴퓨터공학과' 부문에 지원했습니다.",
       isRead: false,
       createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
     },
@@ -420,7 +418,7 @@ const seedData = {
       postId: '2',
       conversationId: '2',
       type: 'message_new',
-      title: '김희서 님의 새 쪽지',
+      title: '한지민 님의 새 쪽지',
       message: '혹시 첫 모임 때 단어장 출력물도 챙겨가야 할까요?',
       isRead: false,
       createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
@@ -466,7 +464,7 @@ const seedData = {
       conversationId: '1',
       senderId: '1',
       content:
-        '안녕하세요 기영님! 교내 캠퍼스 서비스 리디자인 프로젝트 지원서 잘 읽어보았습니다.',
+        '안녕하세요 민재님! 교내 캠퍼스 서비스 리디자인 프로젝트 지원서 잘 읽어보았습니다.',
       isRead: true,
       createdAt: daysAgoAtKst(2, 14, 10),
     },
@@ -530,7 +528,7 @@ const seedData = {
       conversationId: '2',
       senderId: '5',
       content:
-        '기영님, 일본어 교양 시험 대비 스터디 지원서 보완해서 다시 제출했습니다!',
+        '민재님, 일본어 교양 시험 대비 스터디 지원서 보완해서 다시 제출했습니다!',
       isRead: true,
       createdAt: daysAgoAtKst(1, 18, 10),
     },
@@ -539,7 +537,7 @@ const seedData = {
       conversationId: '2',
       senderId: '6',
       content:
-        '네 희서님! 확인했습니다. 매주 화·목 오후 6시 도서관 스터디룸에서 뵈어요.',
+        '네 지민님! 확인했습니다. 매주 화·목 오후 6시 도서관 스터디룸에서 뵈어요.',
       isRead: true,
       createdAt: daysAgoAtKst(1, 19, 5),
     },
@@ -577,12 +575,14 @@ async function seedDatabase() {
   await db.initDatabase();
 
   await db.withTransaction(async (client) => {
+    const defaultPasswordHash = await bcrypt.hash('test1234', 10);
+
     for (const user of seedData.users) {
       await client.query(
-        `INSERT INTO users (id, student_id, name, dept, password_hash)
+        `INSERT INTO users (id, email, name, dept, password_hash)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (id) DO NOTHING`,
-        [Number(user.id), user.studentId, user.name, user.dept, DEFAULT_PASSWORD_HASH]
+        [Number(user.id), user.email, user.name, user.dept, defaultPasswordHash]
       );
     }
 

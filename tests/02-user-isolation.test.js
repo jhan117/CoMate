@@ -4,7 +4,7 @@ const { withServer, request, loginAs } = require('./_helper');
 // 시드 데이터 기준:
 // - User A (이서연, id=1): Post 1 작성자, Notification 7·8 수신자
 // - User A2 (박준혁, id=2): Post 1의 Application 1 작성자
-// - User B (권기영, id=6, 학번 26110091): 타인
+// - User B (오민재, id=6, 이메일 user6@comate.test): 타인
 const USER_A_ID = '1';
 const USER_A_POST_ID = '1';
 const USER_A_APP_ID = '1';
@@ -23,8 +23,8 @@ async function run() {
     const unauthNotis = await request(baseUrl, '/api/notifications');
     assert.equal(unauthNotis.status, 401, '비로그인 알림 조회는 401이어야 합니다.');
 
-    // 1. User B (권기영) 로그인
-    const loginRes = await loginAs(baseUrl, '26110091', '123');
+    // 1. User B (오민재) 로그인
+    const loginRes = await loginAs(baseUrl, 'user6@comate.test', 'test1234');
     assert.equal(loginRes.status, 200, 'User B 로그인이 성공해야 합니다.');
     const userBCookie = loginRes.cookie;
     assert.ok(userBCookie, '로그인 세션 쿠키가 발급되어야 합니다.');

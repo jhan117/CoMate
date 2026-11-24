@@ -20,15 +20,15 @@ function mapApplicationRow(row) {
     processedAt: row.processed_at
       ? new Date(row.processed_at).toISOString()
       : null,
-    applicantStudentId: row.applicant_student_id || '',
+    applicantEmail: row.applicant_email || '',
     applicantName: row.applicant_name || '알 수 없음',
     applicantDept: row.applicant_dept || '',
     ...(row.post_title !== undefined
       ? {
-          postTitle: row.post_title,
-          postCategory: row.post_category,
-          postDeadline: row.post_deadline,
-        }
+        postTitle: row.post_title,
+        postCategory: row.post_category,
+        postDeadline: row.post_deadline,
+      }
       : {}),
   };
 }
@@ -36,7 +36,7 @@ function mapApplicationRow(row) {
 const BASE_APPLICATION_SELECT = `
   SELECT
     a.*,
-    u.student_id AS applicant_student_id,
+    u.email AS applicant_email,
     u.name AS applicant_name,
     u.dept AS applicant_dept
   FROM applications a
@@ -46,7 +46,7 @@ const BASE_APPLICATION_SELECT = `
 const applicationModel = {
   async findUserById(userId) {
     const { rows } = await db.query(
-      `SELECT id::text AS id, student_id AS "studentId", name, dept
+      `SELECT id::text AS id, email, name, dept
        FROM users
        WHERE id = $1`,
       [userId]
@@ -162,7 +162,7 @@ const applicationModel = {
     const { rows } = await db.query(
       `SELECT
          a.*,
-         u.student_id AS applicant_student_id,
+         u.email AS applicant_email,
          u.name AS applicant_name,
          u.dept AS applicant_dept,
          p.title AS post_title,
@@ -271,7 +271,7 @@ const applicationModel = {
          AND a.status IN ('pending', 'revision_requested')
        RETURNING
          a.*,
-         u.student_id AS applicant_student_id,
+         u.email AS applicant_email,
          u.name AS applicant_name,
          u.dept AS applicant_dept`,
       [String(feedback).trim(), postId, deptName, excludeApplicationId]

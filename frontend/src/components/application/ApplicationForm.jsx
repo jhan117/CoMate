@@ -92,9 +92,9 @@ function ApplicationForm({
               <strong className={styles.profileValue}>{currentUser.name}</strong>
             </div>
             <div className={styles.profileItem}>
-              <span className={styles.profileLabel}>학번</span>
+              <span className={styles.profileLabel}>이메일</span>
               <strong className={styles.profileValue}>
-                {currentUser.studentId}
+                {currentUser.email}
               </strong>
             </div>
             <div className={styles.profileItem}>
@@ -128,9 +128,8 @@ function ApplicationForm({
             return (
               <label
                 key={dept.deptName}
-                className={`${styles.deptRadioCard} ${
-                  isSelected ? styles.deptRadioSelected : ""
-                } ${isFull ? styles.deptRadioDisabled : ""}`}
+                className={`${styles.deptRadioCard} ${isSelected ? styles.deptRadioSelected : ""
+                  } ${isFull ? styles.deptRadioDisabled : ""}`}
               >
                 <input
                   type="radio"
@@ -197,10 +196,10 @@ function ApplicationForm({
           {isAllDeptsFull
             ? "모집 마감"
             : submitting
-            ? "제출 중..."
-            : isRevisionMode
-            ? "보완 내용 제출"
-            : "지원서 제출하기"}
+              ? "제출 중..."
+              : isRevisionMode
+                ? "보완 내용 제출"
+                : "지원서 제출하기"}
         </Button>
       </div>
     </form>

@@ -10,7 +10,7 @@ function mapMessageRow(row) {
     conversationId: String(row.conversation_id),
     senderId: String(row.sender_id),
     senderName: row.sender_name || '알 수 없음',
-    senderStudentId: row.sender_student_id || '',
+    senderEmail: row.sender_email || '',
     senderDept: row.sender_dept || '',
     content: isDeleted ? '삭제된 메시지입니다.' : row.content,
     isRead: Boolean(row.is_read),
@@ -21,9 +21,9 @@ function mapMessageRow(row) {
     deletedAt: row.deleted_at ? new Date(row.deleted_at).toISOString() : null,
     ...(row.user1_id !== undefined
       ? {
-          user1Id: String(row.user1_id),
-          user2Id: String(row.user2_id),
-        }
+        user1Id: String(row.user1_id),
+        user2Id: String(row.user2_id),
+      }
       : {}),
   };
 }
@@ -36,46 +36,46 @@ function mapConversationRow(row, viewerUserId) {
 
   const partner = isUser1
     ? {
-        id: String(row.user2_id),
-        studentId: row.user2_student_id || '',
-        name: row.user2_name || '알 수 없음',
-        dept: row.user2_dept || '',
-      }
+      id: String(row.user2_id),
+      email: row.user2_email || '',
+      name: row.user2_name || '알 수 없음',
+      dept: row.user2_dept || '',
+    }
     : {
-        id: String(row.user1_id),
-        studentId: row.user1_student_id || '',
-        name: row.user1_name || '알 수 없음',
-        dept: row.user1_dept || '',
-      };
+      id: String(row.user1_id),
+      email: row.user1_email || '',
+      name: row.user1_name || '알 수 없음',
+      dept: row.user1_dept || '',
+    };
 
   const post = row.post_id
     ? {
-        id: String(row.post_id),
-        title: row.post_title || '',
-        category: row.post_category || '',
-      }
+      id: String(row.post_id),
+      title: row.post_title || '',
+      category: row.post_category || '',
+    }
     : null;
 
   const lastMessage = row.last_message_id
     ? {
-        id: String(row.last_message_id),
-        senderId: String(row.last_message_sender_id),
-        senderName: row.last_message_sender_name || '알 수 없음',
-        content: row.last_message_deleted_at
-          ? '삭제된 메시지입니다.'
-          : row.last_message_content || '',
-        isRead: Boolean(row.last_message_is_read),
-        isEdited:
-          Boolean(row.last_message_updated_at) &&
-          !row.last_message_deleted_at,
-        isDeleted: Boolean(row.last_message_deleted_at),
-        createdAt: row.last_message_created_at
-          ? new Date(row.last_message_created_at).toISOString()
-          : null,
-        updatedAt: row.last_message_updated_at
-          ? new Date(row.last_message_updated_at).toISOString()
-          : null,
-      }
+      id: String(row.last_message_id),
+      senderId: String(row.last_message_sender_id),
+      senderName: row.last_message_sender_name || '알 수 없음',
+      content: row.last_message_deleted_at
+        ? '삭제된 메시지입니다.'
+        : row.last_message_content || '',
+      isRead: Boolean(row.last_message_is_read),
+      isEdited:
+        Boolean(row.last_message_updated_at) &&
+        !row.last_message_deleted_at,
+      isDeleted: Boolean(row.last_message_deleted_at),
+      createdAt: row.last_message_created_at
+        ? new Date(row.last_message_created_at).toISOString()
+        : null,
+      updatedAt: row.last_message_updated_at
+        ? new Date(row.last_message_updated_at).toISOString()
+        : null,
+    }
     : null;
 
   return {
@@ -96,10 +96,10 @@ function mapConversationRow(row, viewerUserId) {
 const BASE_CONVERSATION_SELECT = `
   SELECT
     c.*,
-    u1.student_id AS user1_student_id,
+    u1.email AS user1_email,
     u1.name AS user1_name,
     u1.dept AS user1_dept,
-    u2.student_id AS user2_student_id,
+    u2.email AS user2_email,
     u2.name AS user2_name,
     u2.dept AS user2_dept,
     p.title AS post_title,
@@ -145,7 +145,7 @@ const BASE_CONVERSATION_SELECT = `
 const messageModel = {
   async findUserById(userId) {
     const { rows } = await db.query(
-      `SELECT id::text AS id, student_id AS "studentId", name, dept
+      `SELECT id::text AS id, email, name, dept
        FROM users
        WHERE id = $1`,
       [userId]
@@ -228,7 +228,7 @@ const messageModel = {
       `SELECT
          m.*,
          u.name AS sender_name,
-         u.student_id AS sender_student_id,
+         u.email AS sender_email,
          u.dept AS sender_dept
        FROM messages m
        JOIN users u ON u.id = m.sender_id
@@ -244,7 +244,7 @@ const messageModel = {
       `SELECT
          m.*,
          u.name AS sender_name,
-         u.student_id AS sender_student_id,
+         u.email AS sender_email,
          u.dept AS sender_dept,
          c.user1_id,
          c.user2_id
