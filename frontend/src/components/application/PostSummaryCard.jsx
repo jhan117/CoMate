@@ -1,4 +1,6 @@
+import { useState } from "react";
 import Callout from "../common/Callout";
+import MessageIconLink from "../common/MessageIconLink";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
 import { isDeptFull } from "../../utils/applicationUtils";
 import styles from "./PostSummaryCard.module.css";
@@ -79,6 +81,8 @@ function DeptQuotaItem({ dept, applicantCount, isAuthorMode }) {
 }
 
 function PostSummaryCard({ post, applications, isAuthorMode }) {
+  const [showAuthorContent, setShowAuthorContent] = useState(false);
+
   const pendingCount = applications.filter(
     (a) => a.status === APPLICATION_STATUS.PENDING
   ).length;
@@ -88,10 +92,12 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
   );
   const totalMax = post.departments.reduce((sum, d) => sum + d.maxMembers, 0);
 
+  const totalApplicantsCount = post.totalApplicants ?? applications.length;
+
   const quotaItems = post.departments.map((dept) => {
-    const deptApplicantCount = applications.filter(
-      (a) => a.targetDept === dept.deptName
-    ).length;
+    const deptApplicantCount =
+      dept.applicantCount ??
+      applications.filter((a) => a.targetDept === dept.deptName).length;
 
     return (
       <DeptQuotaItem
@@ -112,9 +118,16 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
         </div>
 
         <h2 className={styles.sidebarTitle}>{post.title}</h2>
-        <p className={styles.sidebarAuthor}>
-          모집 팀장: <strong>{post.author}</strong>
-        </p>
+        <div className={styles.sidebarAuthorRow}>
+          <p className={styles.sidebarAuthor}>
+            모집 팀장: <strong>{post.author}</strong>
+          </p>
+          <MessageIconLink
+            recipientId={post.authorId}
+            postId={post.id}
+            label="팀장에게 쪽지 보내기"
+          />
+        </div>
 
         {post.content && (
           <div className={styles.contentSection}>
@@ -128,7 +141,7 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           <div className={styles.quotaSectionHeader}>
             <h4 className={styles.subTitle}>모집 부문 및 인원 현황</h4>
             <span className={styles.totalSupportTag}>
-              총 지원 현황 {applications.length}명
+              총 지원 현황 {totalApplicantsCount}명
             </span>
           </div>
           <ul className={styles.sidebarQuotaList}>{quotaItems}</ul>
@@ -151,6 +164,15 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           <p className={styles.bannerMeta}>
             작성자: <strong>{post.author}</strong> · 마감일: {post.deadline}
           </p>
+          {post.content && (
+            <button
+              type="button"
+              className={styles.contentToggleBtn}
+              onClick={() => setShowAuthorContent((prev) => !prev)}
+            >
+              {showAuthorContent ? "모집 상세 안내 접기 ▴" : "모집 상세 안내 보기 ▾"}
+            </button>
+          )}
         </div>
 
         <div className={styles.statBoxGroup}>
@@ -164,6 +186,14 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           </div>
         </div>
       </div>
+
+      {post.content && showAuthorContent && (
+        <div className={styles.bannerContentBox}>
+          <Callout variant="neutralBordered" title="내가 작성한 모집 상세 안내">
+            {post.content}
+          </Callout>
+        </div>
+      )}
 
       <div className={styles.bannerQuotaGrid}>{quotaItems}</div>
     </section>

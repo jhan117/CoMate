@@ -1,22 +1,45 @@
 import { useCallback, useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import { fetchCurrentUser } from "../api/authApi";
 import {
   fetchNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  deleteAllNotifications,
 } from "../api/notificationApi";
 import { NOTIFICATION_EVENTS } from "../constants/notificationConstants";
 
-export function useNotifications(externalUser = null) {
+export function useNotifications(externalUser) {
+  const isControlled = externalUser !== undefined;
   const [internalUser, setInternalUser] = useState(null);
-  const activeUser = externalUser !== null ? externalUser : internalUser;
+  const activeUser = isControlled ? externalUser : internalUser;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const syncSessionUser = useCallback(async () => {
+    try {
+      const nextUser = await fetchCurrentUser();
+      if (!isControlled) {
+        setInternalUser((prev) =>
+          prev?.id === nextUser?.id ? prev : nextUser
+        );
+      }
+      return nextUser;
+    } catch {
+      return null;
+    }
+  }, [isControlled]);
 
   useEffect(() => {
+    if (isControlled) return undefined;
+
+    let active = true;
     const handleUserChanged = (e) => {
       setInternalUser(e.detail || null);
+      setError("");
     };
 
     window.addEventListener(
@@ -24,70 +47,96 @@ export function useNotifications(externalUser = null) {
       handleUserChanged
     );
 
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.user) {
-          setInternalUser((prev) => prev || data.user);
-        }
+    fetchCurrentUser()
+      .then((nextUser) => {
+        if (!active) return;
+        setInternalUser((prev) =>
+          prev?.id === nextUser?.id ? prev : nextUser
+        );
       })
-      .catch(() => { });
+      .catch(() => {});
 
     return () => {
+      active = false;
       window.removeEventListener(
         NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
         handleUserChanged
       );
     };
-  }, []);
+  }, [isControlled]);
 
   const userId = activeUser?.id;
 
-  const loadNotifications = useCallback(async () => {
-    if (!userId) {
-      setNotifications([]);
-      setUnreadCount(0);
-      return;
-    }
+  const fetchNotificationsForUser = useCallback(
+    async (targetUserId) => {
+      try {
+        await Promise.resolve();
+        if (!targetUserId) {
+          setNotifications([]);
+          setUnreadCount(0);
+          return;
+        }
+        setLoading(true);
+        const data = await fetchNotifications();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount ?? 0);
+      } catch (err) {
+        if (err.status === 401) {
+          if (!isControlled) setInternalUser(null);
+          setNotifications([]);
+          setUnreadCount(0);
+        } else {
+          setError(err.message || "알림 목록을 불러오지 못했습니다.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isControlled]
+  );
 
-    try {
-      setLoading(true);
-      const data = await fetchNotifications(userId);
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount ?? 0);
-    } catch (err) {
-      console.error("알림 조회 실패:", err);
-    } finally {
-      setLoading(false);
-    }
+  const loadNotifications = useCallback(async () => {
+    setError("");
+    const currentSessionUser = isControlled
+      ? externalUser
+      : await syncSessionUser();
+    const targetUserId = currentSessionUser?.id || userId;
+    await fetchNotificationsForUser(targetUserId);
+  }, [
+    externalUser,
+    fetchNotificationsForUser,
+    isControlled,
+    syncSessionUser,
+    userId,
+  ]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchNotifications()
+      .then((data) => {
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount ?? 0);
+      })
+      .catch(() => {});
   }, [userId]);
 
   useEffect(() => {
-    let active = true;
+    if (!userId) return;
 
-    if (!userId) {
-      return;
-    }
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || undefined;
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
 
-    setLoading(true);
-    fetchNotifications(userId)
-      .then((data) => {
-        if (active) {
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.unreadCount ?? 0);
-        }
-      })
-      .catch((err) => {
-        if (active) console.error("알림 조회 실패:", err);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    socket.on("notification:updated", () => {
+      loadNotifications();
+    });
 
     return () => {
-      active = false;
+      socket.disconnect();
     };
-  }, [userId]);
+  }, [userId, loadNotifications]);
 
   useEffect(() => {
     const handleUpdated = () => {
@@ -107,6 +156,7 @@ export function useNotifications(externalUser = null) {
   }, [loadNotifications]);
 
   const markAsRead = async (notificationId) => {
+    setError("");
     try {
       const data = await markNotificationAsRead(notificationId);
       setNotifications((prev) =>
@@ -114,28 +164,44 @@ export function useNotifications(externalUser = null) {
       );
       setUnreadCount(data.unreadCount);
     } catch (err) {
-      console.error("알림 읽음 처리 오류:", err);
+      setError(err.message || "알림 읽음 처리에 실패했습니다.");
     }
   };
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = async (filter = "all") => {
     if (!userId) return;
+    setError("");
     try {
-      const data = await markAllNotificationsAsRead(userId);
+      const data = await markAllNotificationsAsRead(filter);
       setNotifications(data.notifications || []);
-      setUnreadCount(0);
+      setUnreadCount(data.unreadCount ?? 0);
     } catch (err) {
-      console.error("전체 읽음 처리 오류:", err);
+      setError(err.message || "전체 읽음 처리에 실패했습니다.");
+    }
+  };
+
+  const removeAllNotifications = async (filter = "all") => {
+    if (!userId) return false;
+    setError("");
+    try {
+      const data = await deleteAllNotifications(filter);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount ?? 0);
+      return true;
+    } catch (err) {
+      setError(err.message || "알림 일괄 삭제에 실패했습니다.");
+      return false;
     }
   };
 
   const removeNotification = async (notificationId) => {
+    setError("");
     try {
       const data = await deleteNotification(notificationId);
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       setUnreadCount(data.unreadCount);
     } catch (err) {
-      console.error("알림 삭제 오류:", err);
+      setError(err.message || "알림 삭제에 실패했습니다.");
     }
   };
 
@@ -144,11 +210,14 @@ export function useNotifications(externalUser = null) {
     notifications: userId ? notifications : [],
     unreadCount: userId ? unreadCount : 0,
     loading: userId ? loading : false,
+    error,
     actions: {
       refresh: loadNotifications,
       markAsRead,
       markAllAsRead,
+      removeAll: removeAllNotifications,
       remove: removeNotification,
+      clearError: () => setError(""),
     },
   };
 }

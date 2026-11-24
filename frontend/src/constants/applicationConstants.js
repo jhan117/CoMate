@@ -36,6 +36,8 @@ export const STATUS_NOTICE_MESSAGES = {
   [APPLICATION_STATUS.APPROVED]: "지원이 승인되어 팀원으로 확정되었습니다.",
   [APPLICATION_STATUS.REJECTED]:
     "지원이 거절되었습니다. 거절된 모집글에는 다시 지원할 수 없습니다.",
+  [APPLICATION_STATUS.REVISION_REQUESTED]:
+    "작성자가 지원서 보완을 요청했습니다. 요청 내용을 확인하고 지원서를 수정해 다시 제출해 주세요.",
   [APPLICATION_STATUS.PENDING]:
     "작성자가 지원서를 검토 중입니다. 승인 전에는 지원을 취소할 수 있습니다.",
 };
