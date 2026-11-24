@@ -17,12 +17,19 @@ async function mutateAuth(path, fields) {
 }
 
 export async function fetchCurrentUser() {
-  const data = await requestJson(
-    '/api/auth/me',
-    {},
-    (status) => `인증 요청에 실패했습니다. (${status})`
-  );
-  return data?.user ?? null;
+  try {
+    const data = await requestJson(
+      '/api/auth/me',
+      {},
+      (status) => `인증 요청에 실패했습니다. (${status})`
+    );
+    return data?.user ?? null;
+  } catch (error) {
+    if (error.status === 401) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export const signup = (fields) => mutateAuth('signup', fields);
