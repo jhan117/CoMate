@@ -85,9 +85,9 @@ function ChatThread({
             <div className={styles.partnerTextGroup}>
               <div className={styles.partnerTitleRow}>
                 <h3 className={styles.partnerName}>{partner.name}</h3>
-                {partner.studentId && (
-                  <span className={styles.partnerStudentId}>
-                    ({partner.studentId})
+                {partner.email && (
+                  <span className={styles.partnerEmail}>
+                    ({partner.email})
                   </span>
                 )}
                 {partner.dept && (

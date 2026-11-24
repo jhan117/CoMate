@@ -46,8 +46,8 @@ function SubmittedApplicationCard({
           isRejected
             ? "danger"
             : isRevisionRequested
-            ? "revision"
-            : "neutralBordered"
+              ? "revision"
+              : "neutralBordered"
         }
       >
         {STATUS_NOTICE_MESSAGES[application.status]}
@@ -67,9 +67,9 @@ function SubmittedApplicationCard({
 
       <dl className={styles.detailGrid}>
         <div className={styles.detailItem}>
-          <dt>지원자 이름 / 학번</dt>
+          <dt>지원자 이름 / 이메일</dt>
           <dd>
-            {application.applicantName} ({application.applicantStudentId})
+            {application.applicantName} ({application.applicantEmail})
           </dd>
         </div>
         <div className={styles.detailItem}>

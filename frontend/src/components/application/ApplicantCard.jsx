@@ -22,9 +22,8 @@ function ApplicantCard({
   return (
     <article
       id={`application-${application.id}`}
-      className={`${styles.card} ${
-        highlighted ? styles.cardHighlighted : ""
-      }`}
+      className={`${styles.card} ${highlighted ? styles.cardHighlighted : ""
+        }`}
     >
       <div className={styles.header}>
         <div className={styles.profile}>
@@ -34,9 +33,9 @@ function ApplicantCard({
           <div>
             <div className={styles.nameRow}>
               <h3 className={styles.name}>{application.applicantName}</h3>
-              {application.applicantStudentId && (
-                <span className={styles.studentId}>
-                  ({application.applicantStudentId})
+              {application.applicantEmail && (
+                <span className={styles.email}>
+                  ({application.applicantEmail})
                 </span>
               )}
               <span className={styles.originDept}>
