@@ -4,7 +4,7 @@ const { withServer, request, loginAs } = require('./_helper');
 async function run() {
   await withServer(async (baseUrl) => {
     // 1. 로그인 및 세션 쿠키 저장
-    const loginRes = await loginAs(baseUrl, '26110091', '123');
+    const loginRes = await loginAs(baseUrl, 'user6@comate.test', 'test1234');
     assert.equal(loginRes.status, 200, '로그인이 성공해야 합니다.');
     const oldSessionCookie = loginRes.cookie;
     assert.ok(oldSessionCookie, '세션 쿠키가 발급되어야 합니다.');
@@ -33,6 +33,16 @@ async function run() {
       200,
       '로그아웃 전에는 세션 쿠키로 /api/notifications 접근이 가능해야 합니다.'
     );
+
+    const beforeMe = await request(
+      baseUrl,
+      '/api/auth/me',
+      {},
+      oldSessionCookie
+    );
+    assert.equal(beforeMe.status, 200);
+    assert.equal(beforeMe.data?.user?.email, 'user6@comate.test');
+    assert.equal(beforeMe.data?.user?.passwordHash, undefined);
 
     // 3. 로그아웃 요청 (서버 세션 파기)
     const logoutRes = await request(
@@ -74,15 +84,14 @@ async function run() {
       {},
       oldSessionCookie
     );
-    assert.equal(afterMe.status, 200);
     assert.equal(
-      afterMe.data?.user,
-      null,
-      '로그아웃 후 기존 세션 쿠키로 /api/auth/me 조회 시 user는 null이어야 합니다.'
+      afterMe.status,
+      401,
+      '로그아웃 후 기존 세션 쿠키로 /api/auth/me 요청 시 401이어야 합니다.'
     );
 
     console.log(
-      '[PASS] Test 3: 로그아웃 이후 기존 세션 쿠키 무효화(401 차단 및 user: null) 확인'
+      '[PASS] Test 3: 로그아웃 이후 기존 세션 쿠키 무효화(401 차단) 확인'
     );
   });
 }

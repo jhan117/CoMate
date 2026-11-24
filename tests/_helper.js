@@ -84,10 +84,10 @@ async function request(baseUrl, targetPath, options = {}, cookie = '') {
   };
 }
 
-async function loginAs(baseUrl, studentId, password) {
+async function loginAs(baseUrl, email, password) {
   const res = await request(baseUrl, '/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ studentId, password }),
+    body: JSON.stringify({ email, password }),
   });
   return res;
 }

@@ -3,20 +3,20 @@ const { withServer, loginAs } = require('./_helper');
 
 async function run() {
   await withServer(async (baseUrl) => {
-    // 1. 존재하지 않는 학번으로 로그인 시도 -> 401
-    const unknownUserRes = await loginAs(baseUrl, '99999999', 'wrong-password');
+    // 1. 존재하지 않는 이메일로 로그인 시도 -> 401
+    const unknownUserRes = await loginAs(baseUrl, 'unknown@comate.test', 'wrong-password');
     assert.equal(
       unknownUserRes.status,
       401,
-      `존재하지 않는 학번 로그인은 401이어야 합니다 (실제: ${unknownUserRes.status})`
+      `존재하지 않는 이메일 로그인은 401이어야 합니다 (실제: ${unknownUserRes.status})`
     );
     assert.ok(
       unknownUserRes.data?.message,
       '에러 메시지가 반환되어야 합니다.'
     );
 
-    // 2. 존재하는 학번(26110091) + 잘못된 비밀번호로 로그인 시도 -> 401
-    const wrongPasswordRes = await loginAs(baseUrl, '26110091', 'wrong-password');
+    // 2. 존재하는 이메일 + 잘못된 비밀번호로 로그인 시도 -> 401
+    const wrongPasswordRes = await loginAs(baseUrl, 'user6@comate.test', 'wrong-password');
     assert.equal(
       wrongPasswordRes.status,
       401,
@@ -31,7 +31,7 @@ async function run() {
     assert.equal(
       unknownUserRes.data.message,
       wrongPasswordRes.data.message,
-      '미등록 학번과 오답 비밀번호의 401 에러 메시지가 동일해야 합니다.'
+      '미등록 이메일과 오답 비밀번호의 401 에러 메시지가 동일해야 합니다.'
     );
 
     console.log(

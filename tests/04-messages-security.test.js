@@ -19,8 +19,8 @@ dotenv.config({
 const db = require('../backend/db');
 
 // 시드 데이터 기준:
-// - Conversation 2: 김희서(id=5, 26110093) <-> 권기영(id=6, 26110091)
-// - Conversation 3: 이서연(id=1, 24100412) <-> 박준혁(id=2, 24100815), Message 6 (sender=2)
+// - Conversation 2: 한지민(id=5, user5@comate.test) <-> 오민재(id=6, user6@comate.test)
+// - Conversation 3: 이서연(id=1, user1@comate.test) <-> 박준혁(id=2, user2@comate.test), Message 6 (sender=2)
 const OTHER_CONVERSATION_ID = '3';
 const OTHER_MESSAGE_ID = '6';
 const SHARED_CONVERSATION_ID = '2';
@@ -66,16 +66,16 @@ async function run() {
       '비로그인 Socket.IO 연결은 UNAUTHORIZED로 거절되어야 합니다.'
     );
 
-    // 2. 권기영(6), 김희서(5), 박준혁(2) 로그인
-    const kayeLogin = await loginAs(baseUrl, '26110091', '123');
+    // 2. 오민재(6), 한지민(5), 박준혁(2) 로그인
+    const kayeLogin = await loginAs(baseUrl, 'user6@comate.test', 'test1234');
     assert.equal(kayeLogin.status, 200);
     const kayeCookie = kayeLogin.cookie;
 
-    const ellaLogin = await loginAs(baseUrl, '26110093', '123');
+    const ellaLogin = await loginAs(baseUrl, 'user5@comate.test', 'test1234');
     assert.equal(ellaLogin.status, 200);
     const ellaCookie = ellaLogin.cookie;
 
-    const thirdLogin = await loginAs(baseUrl, '24100815', '123');
+    const thirdLogin = await loginAs(baseUrl, 'user2@comate.test', 'test1234');
     assert.equal(thirdLogin.status, 200);
     const thirdCookie = thirdLogin.cookie;
 
@@ -92,7 +92,7 @@ async function run() {
       '전체 사용자 검색(/api/messages/recipients)은 제거되어 404여야 합니다.'
     );
 
-    // 3. 제3자(권기영)가 타인 대화방(Conversation 3) 접근 시도 -> 403
+    // 3. 제3자(오민재)가 타인 대화방(Conversation 3) 접근 시도 -> 403
     const spoofList = await request(
       baseUrl,
       '/api/messages/conversations?userId=1',
@@ -208,7 +208,7 @@ async function run() {
       );
       assert.equal(createdMsg.isRead, false, '초기 전송 상태는 안 읽음(false)이어야 합니다.');
 
-      // 상대방(김희서)만 수신하고 제3자(박준혁) 소켓은 미수신 확인
+      // 상대방(한지민)만 수신하고 제3자(박준혁) 소켓은 미수신 확인
       const ellaRealtimePayload = await ellaReceivedPromise;
       assert.equal(ellaRealtimePayload.chatMessage.id, createdMsg.id);
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -218,7 +218,7 @@ async function run() {
         '제3자 소켓에는 타인의 실시간 쪽지 이벤트가 전달되면 안 됩니다.'
       );
 
-      // 김희서 알림 벨에 message_new 생성 확인
+      // 한지민 알림 벨에 message_new 생성 확인
       const ellaNotiBeforeRead = await request(
         baseUrl,
         '/api/notifications',
@@ -234,7 +234,7 @@ async function run() {
       );
       assert.ok(unreadMsgNoti, '수신자에게 안 읽은 message_new 알림이 생성되어야 합니다.');
 
-      // 김희서 읽음 처리 -> 권기영 message:read 수신 + 알림 읽음 처리
+      // 한지민 읽음 처리 -> 오민재 message:read 수신 + 알림 읽음 처리
       const markReadRes = await request(
         baseUrl,
         `/api/messages/conversations/${SHARED_CONVERSATION_ID}/read`,
