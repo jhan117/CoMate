@@ -1,9 +1,5 @@
 const db = require('../db');
 
-function withAuthor(post) {
-  return post;
-}
-
 async function list() {
   const result = await db.query(
     `SELECT
@@ -41,7 +37,11 @@ async function list() {
 
 
 async function find(id) {
-  if (!/^\d+$/.test(String(id))) {
+  if (
+    !/^\d+$/.test(String(id)) ||
+    Number(id) < 1 ||
+    Number(id) > 2147483647
+  ) {
     return null;
   }
 
@@ -80,11 +80,7 @@ async function find(id) {
 }
 
 async function create(fields, authorId) {
-  const client = await db.pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
+  const id = await db.withTransaction(async (client) => {
     const result = await client.query(
       `INSERT INTO posts (author_id, category, title, content, deadline)
        VALUES ($1, $2, $3, $4, $5)
@@ -102,78 +98,86 @@ async function create(fields, authorId) {
       );
     }
 
-    await client.query('COMMIT');
-    return await find(id);
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
+    return id;
+  });
+
+  return find(id);
 }
 
 async function update(post, fields) {
-  const updated = await db.withTransaction(async (client) => {
-    await client.query(
-      'SELECT id FROM posts WHERE id = $1 AND author_id = $2 FOR UPDATE',
-      [post.id, post.authorId]
-    );
+  try {
+    const updated = await db.withTransaction(async (client) => {
+      const lockedPost = await client.query(
+        'SELECT id FROM posts WHERE id = $1 AND author_id = $2 FOR UPDATE',
+        [post.id, post.authorId]
+      );
 
-    const existing = await client.query(
-      `SELECT d.dept_name, d.current_members,
-              EXISTS (
-                SELECT 1 FROM applications a
-                WHERE a.post_id = d.post_id
-                  AND a.target_dept = d.dept_name
-              ) AS has_applications
-       FROM post_departments d
-       WHERE d.post_id = $1
-       FOR UPDATE OF d`,
-      [post.id]
-    );
-
-    const names = new Set(fields.departments.map((dept) => dept.deptName));
-
-    for (const dept of existing.rows) {
-      if (
-        (!names.has(dept.dept_name) &&
-          (dept.current_members > 0 || dept.has_applications)) ||
-        (names.has(dept.dept_name) &&
-          fields.departments.find((item) => item.deptName === dept.dept_name)
-            .maxMembers < dept.current_members)
-      ) {
+      if (lockedPost.rowCount === 0) {
         return false;
       }
-    }
 
-    await client.query(
-      `UPDATE posts
-      SET category = $1, title = $2, content = $3, deadline = $4
-      WHERE id = $5 AND author_id = $6`,
-      [fields.category, fields.title, fields.content, fields.deadline, post.id, post.authorId]
-    );
-
-    for (const dept of fields.departments) {
-      await client.query(
-        `INSERT INTO post_departments (post_id, dept_name, max_members)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (post_id, dept_name)
-         DO UPDATE SET max_members = EXCLUDED.max_members`,
-        [post.id, dept.deptName, dept.maxMembers]
+      const existing = await client.query(
+        `SELECT d.dept_name, d.current_members,
+                EXISTS (
+                  SELECT 1 FROM applications a
+                  WHERE a.post_id = d.post_id
+                    AND a.target_dept = d.dept_name
+                ) AS has_applications
+         FROM post_departments d
+         WHERE d.post_id = $1
+         FOR UPDATE OF d`,
+        [post.id]
       );
+
+      const names = new Set(fields.departments.map((dept) => dept.deptName));
+
+      for (const dept of existing.rows) {
+        if (
+          (!names.has(dept.dept_name) &&
+            (dept.current_members > 0 || dept.has_applications)) ||
+          (names.has(dept.dept_name) &&
+            fields.departments.find((item) => item.deptName === dept.dept_name)
+              .maxMembers < dept.current_members)
+        ) {
+          return false;
+        }
+      }
+
+      await client.query(
+        `UPDATE posts
+        SET category = $1, title = $2, content = $3, deadline = $4
+        WHERE id = $5 AND author_id = $6`,
+        [fields.category, fields.title, fields.content, fields.deadline, post.id, post.authorId]
+      );
+
+      for (const dept of fields.departments) {
+        await client.query(
+          `INSERT INTO post_departments (post_id, dept_name, max_members)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (post_id, dept_name)
+           DO UPDATE SET max_members = EXCLUDED.max_members`,
+          [post.id, dept.deptName, dept.maxMembers]
+        );
+      }
+
+      await client.query(
+        `DELETE FROM post_departments
+         WHERE post_id = $1
+           AND NOT (dept_name = ANY($2::text[]))`,
+        [post.id, [...names]]
+      );
+
+      return true;
+    });
+
+    return updated ? find(post.id) : null;
+  } catch (error) {
+    if (error.code === '23503') {
+      return null;
     }
 
-    await client.query(
-      `DELETE FROM post_departments
-       WHERE post_id = $1
-         AND NOT (dept_name = ANY($2::text[]))`,
-      [post.id, [...names]]
-    );
-
-    return true;
-  });
-
-  return updated ? find(post.id) : null;
+    throw error;
+  }
 }
 
 async function remove(post) {
@@ -186,7 +190,7 @@ async function remove(post) {
     );
 
     if (lockedPost.rowCount === 0) {
-      return false;
+      return 'not_found';
     }
 
 
@@ -196,7 +200,7 @@ async function remove(post) {
       );
 
       if (applications.rows.length > 0) {
-        return false;
+        return 'conflict';
       }
 
     const result = await client.query(
@@ -204,15 +208,15 @@ async function remove(post) {
       [post.id, post.authorId]
     );
 
-      return result.rowCount > 0;
+      return result.rowCount > 0 ? 'deleted' : 'not_found';
     });
   } catch (error) {
     if (error.code === '23503') {
-      return false;
+      return 'conflict';
     }
 
     throw error;
   }
 }
 
-module.exports = { withAuthor, list, find, create, update, remove };
+module.exports = { list, find, create, update, remove };

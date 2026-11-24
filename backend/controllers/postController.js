@@ -21,18 +21,10 @@ async function get(req, res, next) {
       return res.status(404).json({ message: '모집글을 찾을 수 없습니다.' });
     }
 
-    return res.json(posts.withAuthor(post));
+    return res.json(post);
   } catch (error) {
     next(error);
   }
-}
-
-function requireActor(req, res, next) {
-  if (!req.userId) {
-    return res.status(401).json({ message: '모집글을 관리하려면 로그인해 주세요.' });
-  }
-
-  next();
 }
 
 async function requireOwner(req, res, next) {
@@ -90,10 +82,11 @@ function validateFields(req, res, next) {
       deptName.length > 100 ||
       names.has(deptName) ||
       !Number.isSafeInteger(maxMembers) ||
-      maxMembers < 1
+      maxMembers < 1 ||
+      maxMembers > 1000
     ) {
       return res.status(400).json({
-        message: '학과 이름은 100자 이내로 중복 없이 입력하고 정원은 1명 이상으로 설정해 주세요.',
+        message: '학과 이름은 100자 이내로 중복 없이 입력하고 정원은 1명 이상 1000명 이하로 설정해 주세요.',
       });
     }
 
@@ -141,7 +134,13 @@ async function update(req, res, next) {
 
 async function remove(req, res, next) {
   try {
-    if (!(await posts.remove(res.locals.post))) {
+    const result = await posts.remove(res.locals.post);
+
+    if (result === 'not_found') {
+      return res.status(404).json({ message: '모집글을 찾을 수 없습니다.' });
+    }
+
+    if (result === 'conflict') {
       return res.status(409).json({ message: '지원서가 있는 모집글은 삭제할 수 없습니다.' });
     }
 
@@ -151,4 +150,4 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { list, get, requireActor, requireOwner, validateFields, create, update, remove };
+module.exports = { list, get, requireOwner, validateFields, create, update, remove };

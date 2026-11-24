@@ -1,7 +1,19 @@
 const assert = require('node:assert/strict');
-const bcrypt = require('../backend/node_modules/bcrypt');
-const db = require('../backend/db');
+const { createRequire } = require('node:module');
+const path = require('node:path');
 const { withServer, request } = require('./_helper');
+
+const backendRequire = createRequire(
+  path.resolve(__dirname, '..', 'backend', 'package.json')
+);
+const dotenv = backendRequire('dotenv');
+const bcrypt = backendRequire('bcrypt');
+
+dotenv.config({
+  path: path.resolve(__dirname, '..', 'backend', '.env'),
+  quiet: true,
+});
+const db = require('../backend/db');
 
 const marker = `comate-test-${process.pid}-${Date.now()}`;
 const emailA = `${marker}-a@example.com`;
@@ -85,7 +97,11 @@ async function run() {
       }
 
       const created = await request(baseUrl, '/api/posts', {
-        method: 'POST', body: JSON.stringify(fields(`${marker}-post`)),
+        method: 'POST',
+        body: JSON.stringify({
+          ...fields(`${marker}-post`),
+          authorId: userB.data.user.id,
+        }),
       }, userA.cookie);
       assert.equal(created.status, 201);
       const postId = created.data?.id;
@@ -93,7 +109,12 @@ async function run() {
       createdPosts.push(postId);
       const persisted = await db.query('SELECT author_id FROM posts WHERE id = $1', [postId]);
       assert.equal(String(persisted.rows[0]?.author_id), userA.data.user.id);
-
+      const fetched = await request(baseUrl, `/api/posts/${postId}`);
+      assert.equal(fetched.status, 200, '정상 모집글 조회는 200이어야 합니다.');
+      assert.equal(fetched.data?.id, postId);
+      assert.equal(fetched.data?.title, `${marker}-post`);
+      assert.equal(fetched.data?.authorId, userA.data.user.id);
+      
       for (const method of ['PUT', 'DELETE']) {
         const res = await request(baseUrl, `/api/posts/${postId}`, {
           method,
@@ -102,7 +123,7 @@ async function run() {
         assert.equal(res.status, 403, `타인 모집글 ${method} 요청은 403이어야 합니다.`);
       }
 
-      for (const id of ['not-a-number', '999999999']) {
+      for (const id of ['not-a-number', '999999999', '0', '-1', '2147483648']) {
         const getRes = await request(baseUrl, `/api/posts/${id}`);
         assert.equal(getRes.status, 404);
         for (const method of ['PUT', 'DELETE']) {
@@ -118,6 +139,52 @@ async function run() {
         'INSERT INTO applications (post_id, applicant_id, target_dept, message) VALUES ($1, $2, $3, $4)',
         [postId, userB.data.user.id, '컴퓨터공학과', '보안 테스트 지원서']
       );
+      
+      await db.query(
+        `UPDATE post_departments
+         SET current_members = $1
+         WHERE post_id = $2 AND dept_name = $3`,
+        [2, postId, '컴퓨터공학과']
+      );
+
+      const updated = await request(baseUrl, `/api/posts/${postId}`, {
+        method: 'PUT',
+        body: JSON.stringify(fields(`${marker}-updated`, [
+          { deptName: '컴퓨터공학과', maxMembers: 5 },
+        ])),
+      }, userA.cookie);
+
+      assert.equal(updated.status, 200, '정상 모집글 수정은 200이어야 합니다.');
+      assert.equal(updated.data?.title, `${marker}-updated`);
+
+      const updatedDept = await db.query(
+        `SELECT current_members, max_members
+         FROM post_departments
+         WHERE post_id = $1 AND dept_name = $2`,
+        [postId, '컴퓨터공학과']
+      );
+
+      assert.equal(updatedDept.rows[0]?.current_members, 2);
+      assert.equal(updatedDept.rows[0]?.max_members, 5);
+
+      const reduceCapacity = await request(baseUrl, `/api/posts/${postId}`, {
+        method: 'PUT',
+        body: JSON.stringify(fields(`${marker}-reduced`, [
+          { deptName: '컴퓨터공학과', maxMembers: 1 },
+        ])),
+      }, userA.cookie);
+
+      assert.equal(reduceCapacity.status, 409, '승인 인원보다 적은 정원 설정은 409여야 합니다.');
+
+      const unchangedDept = await db.query(
+        `SELECT current_members, max_members
+         FROM post_departments
+         WHERE post_id = $1 AND dept_name = $2`,
+        [postId, '컴퓨터공학과']
+      );
+
+      assert.equal(unchangedDept.rows[0]?.current_members, 2);
+      assert.equal(unchangedDept.rows[0]?.max_members, 5);
 
       const removeDept = await request(baseUrl, `/api/posts/${postId}`, {
         method: 'PUT',
@@ -130,6 +197,37 @@ async function run() {
       const stillExists = await db.query('SELECT id FROM posts WHERE id = $1', [postId]);
       assert.equal(stillExists.rows.length, 1, '거부된 삭제 이후 모집글이 유지되어야 합니다.');
 
+            const deletable = await request(baseUrl, '/api/posts', {
+        method: 'POST',
+        body: JSON.stringify(fields(`${marker}-deletable`)),
+      }, userA.cookie);
+
+      assert.equal(deletable.status, 201);
+      const deletableId = deletable.data?.id;
+      assert.match(String(deletableId), /^\d+$/);
+      createdPosts.push(deletableId);
+
+      const deleted = await request(baseUrl, `/api/posts/${deletableId}`, {
+        method: 'DELETE',
+      }, userA.cookie);
+
+      assert.equal(deleted.status, 204, '정상 모집글 삭제는 204여야 합니다.');
+
+      const deletedPost = await db.query(
+        'SELECT id FROM posts WHERE id = $1',
+        [deletableId]
+      );
+
+      assert.equal(deletedPost.rows.length, 0);
+
+      const deletedGet = await request(baseUrl, `/api/posts/${deletableId}`);
+      assert.equal(deletedGet.status, 404);
+
+      const repeatedDelete = await request(baseUrl, `/api/posts/${deletableId}`, {
+        method: 'DELETE',
+      }, userA.cookie);
+
+      assert.equal(repeatedDelete.status, 404);
       console.log('[PASS] Test 5: 회원가입, bcrypt, 로그인, 모집글 인증·소유권·지원서 보호 및 상태 코드');
     });
   } finally {

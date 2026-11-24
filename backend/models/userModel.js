@@ -13,6 +13,14 @@ async function findByEmail(email) {
 }
 
 async function findById(id) {
+  if (
+    !/^\d+$/.test(String(id)) ||
+    Number(id) < 1 ||
+    Number(id) > 2147483647
+  ) {
+    return null;
+  }
+
   const result = await db.query(
     `SELECT id, email, name, dept, password_hash AS "passwordHash"
      FROM users

@@ -20,7 +20,7 @@ function startSession(req, res, next, user, status) {
 
 
 async function signup(req, res, next) {
-  const email = text(req.body?.email);
+  const email = text(req.body?.email).toLowerCase();
   const name = text(req.body?.name);
   const dept = text(req.body?.dept);
   const password = req.body?.password;
@@ -48,7 +48,7 @@ async function signup(req, res, next) {
 
     startSession(req, res, next, user, 201);
   } catch (error) {
-    if (error.code === '23505' && error.constraint === 'users_email_key') {
+    if (error.code === '23505') {
       return res.status(409).json({ message: '이미 가입된 이메일입니다.' });
     }
 
@@ -59,7 +59,7 @@ async function signup(req, res, next) {
 
 
 async function login(req, res, next) {
-  const email = text(req.body?.email);
+  const email = text(req.body?.email).toLowerCase();
   const password = req.body?.password;
 
   if (
@@ -85,21 +85,20 @@ async function login(req, res, next) {
   }
 }
 
-async function me(req, res, next) {
-  try {
-    const user = await users.findById(req.session.user?.id);
-
-    return res.json({ user: user ? users.publicUser(user) : null });
-  } catch (error) {
-    next(error);
-  }
+function me(req, res) {
+  return res.json({ user: users.publicUser(req.user) });
 }
 
 function logout(req, res, next) {
   req.session.destroy((error) => {
     if (error) return next(error);
 
-    res.clearCookie('comate.sid', { path: '/' });
+    res.clearCookie('comate.sid', {
+      path: '/',
+      httpOnly: true,
+      sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+      secure: process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER),
+    });
     return res.status(204).end();
   });
 }
