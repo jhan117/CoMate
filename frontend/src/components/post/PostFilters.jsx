@@ -1,4 +1,4 @@
-
+import Button from '../common/Button'
 import styles from './PostFilters.module.css'
 
 export default function PostFilters({
@@ -8,9 +8,19 @@ export default function PostFilters({
   onCategoryChange,
   department,
   onDepartmentChange,
+  hideClosed,
+  onHideClosedChange,
   categories,
   departments,
+  resultCount,
 }) {
+  function resetFilters() {
+    onQueryChange('')
+    onCategoryChange('')
+    onDepartmentChange('')
+    onHideClosedChange(false)
+  }
+
   return (
     <div className={styles.filters}>
       <label className={styles.field}>
@@ -52,6 +62,26 @@ export default function PostFilters({
           ))}
         </select>
       </label>
+
+      <label className={styles.toggle}>
+        <input
+          type="checkbox"
+          role="switch"
+          checked={hideClosed}
+          onChange={(event) => onHideClosedChange(event.target.checked)}
+        />
+        마감 글 제외
+      </label>
+
+      <Button
+        variant="secondary"
+        onClick={resetFilters}
+        disabled={!query && !category && !department && !hideClosed}
+      >
+        초기화
+      </Button>
+
+      <span aria-live="polite">검색 결과 {resultCount}건</span>
     </div>
   )
 }

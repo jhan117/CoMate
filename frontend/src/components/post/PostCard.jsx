@@ -6,7 +6,9 @@ import card from './PostCard.module.css'
 export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDelete }) {
   const detailUrl = `/posts/${encodeURIComponent(post.id)}/application`
   const deadlineMeta = getDeadlineMeta(post.deadline)
-  const isClosed = deadlineMeta.isClosed
+  const isFull = post.departments.length > 0 &&
+    post.departments.every((dept) => dept.currentMembers >= dept.maxMembers)
+  const isClosed = deadlineMeta.isClosed || isFull
   const cardRef = useRef(null)
 
   useLayoutEffect(() => {
@@ -41,7 +43,11 @@ export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDe
       <div className={card.badgeRow}>
         <span className={card.categoryBadge}>{post.category}</span>
         <div className={card.deadlineGroup}>
-          {deadlineMeta.label && (
+          {isFull ? (
+            <span className={`${card.deadlineBadge} ${card.closed}`}>
+              정원 마감
+            </span>
+          ) : deadlineMeta.label && (
             <span className={`${card.deadlineBadge} ${card[deadlineMeta.variant]}`}>
               {deadlineMeta.label}
             </span>
@@ -93,7 +99,7 @@ export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDe
               size="sm"
               className={card.applicantAction}
             >
-              {isClosed ? '현황 보기' : '지원하기'}
+              {isFull ? '정원 마감' : isClosed ? '현황 보기' : '지원하기'}
             </Button>
           )}
         </div>

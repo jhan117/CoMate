@@ -31,7 +31,10 @@ async function list() {
      ORDER BY p.created_at DESC, p.id DESC`
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    createdAt: new Date(row.createdAt).toISOString(),
+  }));
 }
 
 
@@ -76,7 +79,12 @@ async function find(id) {
     [id]
   );
 
-  return result.rows[0] || null;
+  const row = result.rows[0];
+
+  return row ? {
+    ...row,
+    createdAt: new Date(row.createdAt).toISOString(),
+  } : null;
 }
 
 async function create(fields, authorId) {

@@ -60,13 +60,14 @@ function validateFields(req, res, next) {
     typeof req.body?.category !== 'string' ||
     !category || category.length > 50 ||
     typeof req.body?.content !== 'string' ||
+    content.length > 5000 ||
     typeof req.body?.deadline !== 'string' ||
     !/^\d{4}-\d{2}-\d{2}$/.test(deadline) ||
     Number.isNaN(date.getTime()) ||
     date.toISOString().slice(0, 10) !== deadline ||
     !Array.isArray(departments) || departments.length === 0
   ) {
-    return res.status(400).json({ message: '제목, 분류, 내용, 마감일, 모집 학과를 확인해 주세요.' });
+    return res.status(400).json({ message: '제목, 분류, 내용(5000자 이내), 마감일, 모집 학과를 확인해 주세요.' });
   }
 
   const names = new Set();

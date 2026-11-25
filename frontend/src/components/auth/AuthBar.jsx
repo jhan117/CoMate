@@ -30,6 +30,16 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
       new FormData(event.currentTarget)
     )
 
+    if (signingUp && !fields.name.trim()) {
+      setError('이름을 입력해 주세요.')
+      return
+    }
+
+    if (signingUp && !fields.dept.trim()) {
+      setError('학과를 입력해 주세요.')
+      return
+    }
+
     if (signingUp && fields.password !== fields.passwordConfirmation) {
       setError('비밀번호가 서로 일치하지 않습니다.')
       return
@@ -163,6 +173,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                     type="email"
                     required
                     maxLength={254}
+                    placeholder="example@email.com"
                     autoComplete="email"
                   />
                 </label>
@@ -176,6 +187,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                     required
                     maxLength={128}
                     minLength={signingUp ? 8 : undefined}
+                    placeholder={signingUp ? '8자 이상 입력해 주세요.' : '비밀번호를 입력해 주세요.'}
                     autoComplete={
                       signingUp
                         ? 'new-password'
@@ -212,6 +224,7 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
                         type="password"
                         required
                         maxLength={128}
+                        minLength={8}
                         autoComplete="new-password"
                       />
                     </label>
