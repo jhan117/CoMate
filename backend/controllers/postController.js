@@ -1,8 +1,5 @@
 const posts = require('../models/postModel');
-
-function clean(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
+const { cleanText } = require('../utils/validation');
 
 async function list(req, res, next) {
   try {
@@ -47,10 +44,10 @@ async function requireOwner(req, res, next) {
 }
 
 function validateFields(req, res, next) {
-  const title = clean(req.body?.title);
-  const category = clean(req.body?.category);
-  const content = clean(req.body?.content);
-  const deadline = clean(req.body?.deadline);
+  const title = cleanText(req.body?.title);
+  const category = cleanText(req.body?.category);
+  const content = cleanText(req.body?.content);
+  const deadline = cleanText(req.body?.deadline);
   const departments = req.body?.departments;
   const date = new Date(`${deadline}T00:00:00Z`);
 
@@ -74,9 +71,8 @@ function validateFields(req, res, next) {
   const quotas = [];
 
   for (const department of departments) {
-    const deptName = clean(department?.deptName);
+    const deptName = cleanText(department?.deptName);
     const maxMembers = department?.maxMembers;
-
 
     if (
       !deptName ||

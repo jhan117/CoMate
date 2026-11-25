@@ -1,9 +1,6 @@
 const users = require('../models/userModel');
 const { disconnectSession } = require('../socket');
-
-function text(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
+const { cleanText } = require('../utils/validation');
 
 function startSession(req, res, next, user, status) {
   req.session.regenerate((error) => {
@@ -21,9 +18,9 @@ function startSession(req, res, next, user, status) {
 
 
 async function signup(req, res, next) {
-  const email = text(req.body?.email).toLowerCase();
-  const name = text(req.body?.name);
-  const dept = text(req.body?.dept);
+  const email = cleanText(req.body?.email).toLowerCase();
+  const name = cleanText(req.body?.name);
+  const dept = cleanText(req.body?.dept);
   const password = req.body?.password;
 
   if (
@@ -60,7 +57,7 @@ async function signup(req, res, next) {
 
 
 async function login(req, res, next) {
-  const email = text(req.body?.email).toLowerCase();
+  const email = cleanText(req.body?.email).toLowerCase();
   const password = req.body?.password;
 
   if (

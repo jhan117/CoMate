@@ -1,5 +1,5 @@
 const db = require('../db');
-const { isIntegerId } = require('../utils/validation');
+const { isIntegerId, toIsoString } = require('../utils/validation');
 
 async function list() {
   const result = await db.query(
@@ -34,7 +34,7 @@ async function list() {
 
   return result.rows.map((row) => ({
     ...row,
-    createdAt: new Date(row.createdAt).toISOString(),
+    createdAt: toIsoString(row.createdAt),
   }));
 }
 
@@ -80,7 +80,7 @@ async function find(id) {
 
   return row ? {
     ...row,
-    createdAt: new Date(row.createdAt).toISOString(),
+    createdAt: toIsoString(row.createdAt),
   } : null;
 }
 
