@@ -8,7 +8,10 @@ import {
   deleteNotification,
   deleteAllNotifications,
 } from "../api/notificationApi";
-import { NOTIFICATION_EVENTS } from "../constants/notificationConstants";
+import {
+  NOTIFICATION_EVENTS,
+  NOTIFICATION_TYPES,
+} from "../constants/notificationConstants";
 
 export function useNotifications(externalUser) {
   const isControlled = externalUser !== undefined;
@@ -205,10 +208,24 @@ export function useNotifications(externalUser) {
     }
   };
 
+  const visibleNotifications = userId ? notifications : [];
+  const recruitmentNotifications = visibleNotifications.filter(
+    (n) => n.type !== NOTIFICATION_TYPES.MESSAGE_NEW
+  );
+  const recruitmentUnreadCount = recruitmentNotifications.filter(
+    (n) => !n.isRead
+  ).length;
+  const unreadMessageCount = visibleNotifications.filter(
+    (n) => n.type === NOTIFICATION_TYPES.MESSAGE_NEW && !n.isRead
+  ).length;
+
   return {
     activeUser,
-    notifications: userId ? notifications : [],
+    notifications: visibleNotifications,
     unreadCount: userId ? unreadCount : 0,
+    recruitmentNotifications,
+    recruitmentUnreadCount,
+    unreadMessageCount,
     loading: userId ? loading : false,
     error,
     actions: {

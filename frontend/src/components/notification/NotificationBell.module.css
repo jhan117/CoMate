@@ -27,13 +27,7 @@
   font-weight: 700;
 }
 
-.hubTriggerLabel {
-  color: #4f46e5;
-  font-weight: 700;
-}
-
-.hubTriggerCompact {
-  display: none;
+.hubChevron {
   color: #4f46e5;
   font-weight: 700;
 }
@@ -94,14 +88,8 @@
     padding: 8px 10px;
   }
 
-  .bellLabel,
-  .userDeptText,
-  .hubTriggerLabel {
+  .bellLabel {
     display: none;
-  }
-
-  .hubTriggerCompact {
-    display: inline;
   }
 
   .currentUserBadge {
