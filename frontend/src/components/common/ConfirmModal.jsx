@@ -1,4 +1,5 @@
 import Button from "./Button";
+import Callout from "./Callout";
 import Modal from "./Modal";
 import styles from "./ConfirmModal.module.css";
 
@@ -7,6 +8,7 @@ function ConfirmModal({
   title = "확인",
   description = "",
   preview = "",
+  error = "",
   confirmLabel = "확인",
   cancelLabel = "취소",
   confirmVariant = "dangerSolid",
@@ -26,6 +28,13 @@ function ConfirmModal({
     >
       {description && <p className={styles.description}>{description}</p>}
       {preview && <p className={styles.preview}>{preview}</p>}
+      {error && (
+        <div role="alert" className={styles.errorBox}>
+          <Callout variant="danger" size="compact">
+            {error}
+          </Callout>
+        </div>
+      )}
       <div className={styles.actions}>
         <Button
           type="button"

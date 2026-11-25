@@ -4,6 +4,8 @@ import Callout from "../common/Callout";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
 import styles from "./ApplicantDecisionFooter.module.css";
 
+const FEEDBACK_MAX_LENGTH = 1000;
+
 function ApplicantDecisionFooter({
   application,
   isTargetDeptFull,
@@ -48,6 +50,12 @@ function ApplicantDecisionFooter({
       );
       return;
     }
+    if (feedbackText.trim().length > FEEDBACK_MAX_LENGTH) {
+      setFeedbackError(
+        `보완 요청 및 거절 사유는 ${FEEDBACK_MAX_LENGTH}자 이하로 입력해 주세요.`
+      );
+      return;
+    }
     await onDecision(application, feedbackMode, feedbackText.trim());
     closeFeedbackBox();
   };
@@ -70,11 +78,17 @@ function ApplicantDecisionFooter({
 
           {!isApprovedMode && (
             <>
-              <label className={styles.feedbackFormLabel}>
-                {isRevisionMode ? "보완 요청 내용" : "거절 사유"}
-              </label>
+              <div className={styles.feedbackLabelRow}>
+                <label className={styles.feedbackFormLabel}>
+                  {isRevisionMode ? "보완 요청 내용" : "거절 사유"}
+                </label>
+                <span className={styles.charCount}>
+                  {feedbackText.length} / {FEEDBACK_MAX_LENGTH.toLocaleString()}자
+                </span>
+              </div>
               <textarea
                 rows={3}
+                maxLength={FEEDBACK_MAX_LENGTH}
                 className={styles.feedbackTextarea}
                 placeholder={
                   isRevisionMode
@@ -82,7 +96,10 @@ function ApplicantDecisionFooter({
                     : "지원자에게 전달할 거절 사유를 작성해 주세요"
                 }
                 value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
+                onChange={(e) => {
+                  setFeedbackText(e.target.value);
+                  if (feedbackError) setFeedbackError("");
+                }}
               />
               {feedbackError && (
                 <p className={styles.feedbackErrorText}>{feedbackError}</p>
@@ -104,8 +121,8 @@ function ApplicantDecisionFooter({
                 isApprovedMode
                   ? "approve"
                   : isRejectedMode
-                  ? "dangerSolid"
-                  : "revisionSolid"
+                    ? "dangerSolid"
+                    : "revisionSolid"
               }
               size="sm"
               disabled={processing}
@@ -114,8 +131,8 @@ function ApplicantDecisionFooter({
               {isApprovedMode
                 ? "승인 확정"
                 : isRevisionMode
-                ? "보완 요청 전달"
-                : "거절 확정"}
+                  ? "보완 요청 전달"
+                  : "거절 확정"}
             </Button>
           </div>
         </div>
