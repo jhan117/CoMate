@@ -1,13 +1,10 @@
 const messageModel = require('../models/messageModel');
 const notificationModel = require('../models/notificationModel');
 const { emitToUser } = require('../socket');
+const { isIntegerId } = require('../utils/validation');
 
 function cleanText(value) {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-function isIntegerId(value) {
-  return /^\d+$/.test(String(value || '').trim());
 }
 
 function stripInternalParticipants(chatMessage) {

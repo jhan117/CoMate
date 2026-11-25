@@ -24,10 +24,31 @@ export const NOTIFICATION_EVENTS = {
   APPLICATION_PAGE_REFRESH: "comate:application-page-refresh",
 };
 
-export function emitActiveUserChanged(user) {
+const AUTH_SYNC_CHANNEL_NAME = "comate-auth-sync";
+const authSyncChannel =
+  typeof window !== "undefined" && "BroadcastChannel" in window
+    ? new window.BroadcastChannel(AUTH_SYNC_CHANNEL_NAME)
+    : null;
+
+if (authSyncChannel) {
+  authSyncChannel.onmessage = (event) => {
+    if (event.data?.type === "ACTIVE_USER_CHANGED") {
+      emitActiveUserChanged(event.data.user ?? null, { broadcast: false });
+    }
+  };
+}
+
+export function emitActiveUserChanged(user, { broadcast = true } = {}) {
   window.dispatchEvent(
     new CustomEvent(NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED, { detail: user })
   );
+
+  if (broadcast && authSyncChannel) {
+    authSyncChannel.postMessage({
+      type: "ACTIVE_USER_CHANGED",
+      user: user ?? null,
+    });
+  }
 }
 
 export function emitNotificationsUpdated() {

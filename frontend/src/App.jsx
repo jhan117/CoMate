@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchCurrentUser } from './api/authApi'
+import { NOTIFICATION_EVENTS } from './constants/notificationConstants'
 import Header from './components/Header'
 import Body from './components/Body'
 import Footer from './components/Footer'
@@ -18,6 +19,15 @@ function App() {
   useEffect(() => {
     let active = true
 
+    const handleUserChanged = (event) => {
+      if (active) setUser(event.detail ?? null)
+    }
+
+    window.addEventListener(
+      NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
+      handleUserChanged
+    )
+
     fetchCurrentUser()
       .then((currentUser) => {
         if (active) setUser(currentUser)
@@ -31,6 +41,10 @@ function App() {
 
     return () => {
       active = false
+      window.removeEventListener(
+        NOTIFICATION_EVENTS.ACTIVE_USER_CHANGED,
+        handleUserChanged
+      )
     }
   }, [])
 

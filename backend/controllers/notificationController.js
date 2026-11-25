@@ -1,8 +1,5 @@
 const notificationModel = require('../models/notificationModel');
-
-function isIntegerId(value) {
-  return /^\d+$/.test(String(value || '').trim());
-}
+const { isIntegerId } = require('../utils/validation');
 
 const notificationController = {
   // 1. 로그인한 사용자의 알림 목록 및 안 읽은 개수 조회 (GET /api/notifications)

@@ -1,11 +1,8 @@
 const { Server } = require('socket.io');
 const messageModel = require('../models/messageModel');
+const { isIntegerId } = require('../utils/validation');
 
 let ioInstance = null;
-
-function isIntegerId(value) {
-  return /^\d+$/.test(String(value || '').trim());
-}
 
 function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
   const io = new Server(httpServer, {
@@ -39,6 +36,10 @@ function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
 
   io.on('connection', (socket) => {
     socket.join(`user:${socket.userId}`);
+    const sessionId = socket.request.sessionID;
+    if (sessionId) {
+      socket.join(`session:${sessionId}`);
+    }
   });
 
   ioInstance = io;
@@ -54,8 +55,14 @@ function emitToUser(userId, event, payload) {
   ioInstance.to(`user:${String(userId)}`).emit(event, payload);
 }
 
+function disconnectSession(sessionId) {
+  if (!ioInstance || !sessionId) return;
+  ioInstance.in(`session:${String(sessionId)}`).disconnectSockets(true);
+}
+
 module.exports = {
   initSocket,
   getIO,
   emitToUser,
+  disconnectSession,
 };
