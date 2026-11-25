@@ -120,8 +120,11 @@
 }
 
 .partnerEmail {
+  margin: 2px 0 0;
   font-size: 12px;
   color: #6b7280;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .partnerDeptBadge {
@@ -147,7 +150,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 420px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .postLink {
