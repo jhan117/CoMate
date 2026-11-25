@@ -1,4 +1,5 @@
 const users = require('../models/userModel');
+const { disconnectSession } = require('../socket');
 
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -90,9 +91,12 @@ function me(req, res) {
 }
 
 function logout(req, res, next) {
+  const sessionId = req.sessionID;
+
   req.session.destroy((error) => {
     if (error) return next(error);
 
+    disconnectSession(sessionId);
     res.clearCookie('comate.sid', {
       path: '/',
       httpOnly: true,
