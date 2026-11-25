@@ -1,8 +1,9 @@
 const userModel = require('../models/userModel');
+const { isIntegerId } = require('../utils/validation');
 
 async function requireAuth(req, res, next) {
   const sessionUserId = req.session?.user?.id;
-  if (!sessionUserId || !/^\d+$/.test(String(sessionUserId))) {
+  if (!sessionUserId || !isIntegerId(sessionUserId)) {
     return res.status(401).json({ message: '로그인이 필요한 기능입니다.' });
   }
 

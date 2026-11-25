@@ -1,5 +1,5 @@
 const { Server } = require('socket.io');
-const messageModel = require('../models/messageModel');
+const userModel = require('../models/userModel');
 const { isIntegerId } = require('../utils/validation');
 
 let ioInstance = null;
@@ -21,13 +21,14 @@ function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
         return next(new Error('UNAUTHORIZED'));
       }
 
-      const user = await messageModel.findUserById(sessionUserId);
-      if (!user) {
+      const userRow = await userModel.findById(sessionUserId);
+      if (!userRow) {
         return next(new Error('UNAUTHORIZED'));
       }
 
+      const user = userModel.publicUser(userRow);
       socket.user = user;
-      socket.userId = String(user.id);
+      socket.userId = user.id;
       return next();
     } catch (error) {
       return next(error);
@@ -46,10 +47,6 @@ function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
   return io;
 }
 
-function getIO() {
-  return ioInstance;
-}
-
 function emitToUser(userId, event, payload) {
   if (!ioInstance || !userId) return;
   ioInstance.to(`user:${String(userId)}`).emit(event, payload);
@@ -62,7 +59,6 @@ function disconnectSession(sessionId) {
 
 module.exports = {
   initSocket,
-  getIO,
   emitToUser,
   disconnectSession,
 };
