@@ -1,4 +1,5 @@
 const db = require('../db');
+const { isIntegerId } = require('../utils/validation');
 
 async function list() {
   const result = await db.query(
@@ -40,11 +41,7 @@ async function list() {
 
 
 async function find(id) {
-  if (
-    !/^\d+$/.test(String(id)) ||
-    Number(id) < 1 ||
-    Number(id) > 2147483647
-  ) {
+  if (!isIntegerId(id)) {
     return null;
   }
 

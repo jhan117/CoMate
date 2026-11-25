@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Button from '../common/Button'
 import Callout from '../common/Callout'
 import Modal from '../common/Modal'
+import { getSeoulDateKey } from '../../utils/applicationUtils'
 import styles from './PostForm.module.css'
 
 const emptyDepartment = { deptName: '', maxMembers: '1' }
@@ -48,7 +49,7 @@ export default function PostForm({
   }
 
   const modalTitle = post ? '모집글 수정' : '새 모집글 작성'
-  const todayKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const todayKST = getSeoulDateKey(new Date())
 
   return (
     <Modal
