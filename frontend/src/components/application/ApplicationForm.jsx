@@ -3,6 +3,7 @@ import Button from "../common/Button";
 import Callout from "../common/Callout";
 import { APPLICATION_STATUS } from "../../constants/applicationConstants";
 import {
+  getDeadlineMeta,
   getFirstAvailableDeptName,
   isDeptFull,
 } from "../../utils/applicationUtils";
@@ -22,6 +23,8 @@ function ApplicationForm({
 
   const firstAvailable = getFirstAvailableDeptName(post.departments);
   const isAllDeptsFull = post.departments.every((d) => isDeptFull(d));
+  const isDeadlineClosed = getDeadlineMeta(post.deadline).isClosed;
+  const isSubmitClosed = isDeadlineClosed || isAllDeptsFull;
 
   const initialDept = (() => {
     if (isRevisionMode && existingApplication?.targetDept) {
@@ -45,6 +48,10 @@ function ApplicationForm({
     e.preventDefault();
     setErrorMsg("");
 
+    if (isDeadlineClosed) {
+      setErrorMsg("모집 마감일이 지나 지원서를 제출할 수 없습니다.");
+      return;
+    }
     if (!targetDept) {
       setErrorMsg("지원할 모집 부문을 선택해 주세요.");
       return;
@@ -92,23 +99,29 @@ function ApplicationForm({
               <strong className={styles.profileValue}>{currentUser.name}</strong>
             </div>
             <div className={styles.profileItem}>
+              <span className={styles.profileLabel}>소속 학과</span>
+              <strong className={styles.profileValue}>{currentUser.dept}</strong>
+            </div>
+            <div className={`${styles.profileItem} ${styles.profileItemFull}`}>
               <span className={styles.profileLabel}>이메일</span>
               <strong className={styles.profileValue}>
                 {currentUser.email}
               </strong>
             </div>
-            <div className={styles.profileItem}>
-              <span className={styles.profileLabel}>소속 학과</span>
-              <strong className={styles.profileValue}>{currentUser.dept}</strong>
-            </div>
           </div>
         </div>
       )}
 
-      {isAllDeptsFull && (
-        <Callout variant="danger" title="모집 정원 마감 안내">
-          모든 모집 부문의 정원이 마감되어 현재 지원서를 제출할 수 없습니다.
+      {isDeadlineClosed ? (
+        <Callout variant="danger" title="모집 마감 안내">
+          모집 마감일({post.deadline})이 지나 현재 지원서를 제출할 수 없습니다.
         </Callout>
+      ) : (
+        isAllDeptsFull && (
+          <Callout variant="danger" title="모집 정원 마감 안내">
+            모든 모집 부문의 정원이 마감되어 현재 지원서를 제출할 수 없습니다.
+          </Callout>
+        )
       )}
 
       {errorMsg && (
@@ -129,13 +142,13 @@ function ApplicationForm({
               <label
                 key={dept.deptName}
                 className={`${styles.deptRadioCard} ${isSelected ? styles.deptRadioSelected : ""
-                  } ${isFull ? styles.deptRadioDisabled : ""}`}
+                  } ${isFull || isDeadlineClosed ? styles.deptRadioDisabled : ""}`}
               >
                 <input
                   type="radio"
                   name="targetDept"
                   value={dept.deptName}
-                  disabled={isFull}
+                  disabled={isFull || isDeadlineClosed}
                   checked={isSelected}
                   onChange={(e) => setTargetDept(e.target.value)}
                 />
@@ -191,9 +204,9 @@ function ApplicationForm({
           type="submit"
           variant="primary"
           size="lg"
-          disabled={submitting || isAllDeptsFull}
+          disabled={submitting || isSubmitClosed}
         >
-          {isAllDeptsFull
+          {isSubmitClosed
             ? "모집 마감"
             : submitting
               ? "제출 중..."

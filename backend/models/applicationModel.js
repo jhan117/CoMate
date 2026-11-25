@@ -1,4 +1,5 @@
 const db = require('../db');
+const { toIsoString } = require('../utils/validation');
 
 function mapApplicationRow(row) {
   if (!row) return null;
@@ -15,11 +16,9 @@ function mapApplicationRow(row) {
     feedback: isPendingResubmitted ? '' : row.feedback || '',
     previousFeedback: isPendingResubmitted ? row.feedback || '' : '',
     isResubmitted: hasUpdated,
-    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
-    processedAt: row.processed_at
-      ? new Date(row.processed_at).toISOString()
-      : null,
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
+    processedAt: toIsoString(row.processed_at),
     applicantEmail: row.applicant_email || '',
     applicantName: row.applicant_name || '알 수 없음',
     applicantDept: row.applicant_dept || '',
@@ -44,16 +43,6 @@ const BASE_APPLICATION_SELECT = `
 `;
 
 const applicationModel = {
-  async findUserById(userId) {
-    const { rows } = await db.query(
-      `SELECT id::text AS id, email, name, dept
-       FROM users
-       WHERE id = $1`,
-      [userId]
-    );
-    return rows[0] || null;
-  },
-
   async findPostById(postId) {
     const postResult = await db.query(
       `SELECT
@@ -92,7 +81,7 @@ const applicationModel = {
 
     return {
       ...post,
-      createdAt: post.createdAt ? new Date(post.createdAt).toISOString() : null,
+      createdAt: toIsoString(post.createdAt),
       departments: deptResult.rows,
     };
   },
@@ -154,7 +143,7 @@ const applicationModel = {
 
     return rows.map((row) => ({
       ...row,
-      createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
+      createdAt: toIsoString(row.createdAt),
     }));
   },
 

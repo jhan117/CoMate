@@ -1,4 +1,5 @@
 const db = require('../db');
+const { toIsoString } = require('../utils/validation');
 
 function mapMessageRow(row) {
   if (!row) return null;
@@ -16,9 +17,9 @@ function mapMessageRow(row) {
     isRead: Boolean(row.is_read),
     isEdited: hasUpdated,
     isDeleted,
-    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
-    deletedAt: row.deleted_at ? new Date(row.deleted_at).toISOString() : null,
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
+    deletedAt: toIsoString(row.deleted_at),
     ...(row.user1_id !== undefined
       ? {
         user1Id: String(row.user1_id),
@@ -69,12 +70,8 @@ function mapConversationRow(row, viewerUserId) {
         Boolean(row.last_message_updated_at) &&
         !row.last_message_deleted_at,
       isDeleted: Boolean(row.last_message_deleted_at),
-      createdAt: row.last_message_created_at
-        ? new Date(row.last_message_created_at).toISOString()
-        : null,
-      updatedAt: row.last_message_updated_at
-        ? new Date(row.last_message_updated_at).toISOString()
-        : null,
+      createdAt: toIsoString(row.last_message_created_at),
+      updatedAt: toIsoString(row.last_message_updated_at),
     }
     : null;
 
@@ -87,8 +84,8 @@ function mapConversationRow(row, viewerUserId) {
     partner,
     lastMessage,
     unreadCount: Number(row.unread_count ?? 0),
-    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
   };
 }
 
@@ -143,16 +140,6 @@ const BASE_CONVERSATION_SELECT = `
 `;
 
 const messageModel = {
-  async findUserById(userId) {
-    const { rows } = await db.query(
-      `SELECT id::text AS id, email, name, dept
-       FROM users
-       WHERE id = $1`,
-      [userId]
-    );
-    return rows[0] || null;
-  },
-
   async findPostBriefById(postId) {
     const { rows } = await db.query(
       `SELECT id::text AS id, title, category

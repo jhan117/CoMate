@@ -11,6 +11,7 @@ import styles from "./SubmittedApplicationCard.module.css";
 
 function SubmittedApplicationCard({
   application,
+  isDeadlineClosed = false,
   canceling,
   onCancel,
   onStartRevision,
@@ -65,17 +66,28 @@ function SubmittedApplicationCard({
         </Callout>
       )}
 
+      {isRevisionRequested && isDeadlineClosed && (
+        <Callout variant="danger" size="compact">
+          모집 마감일이 지나 지원서를 다시 제출할 수 없습니다.
+        </Callout>
+      )}
+
+      <div className={styles.applicantMetaBar}>
+        <span className={styles.applicantMetaLabel}>지원자 정보</span>
+        <div className={styles.applicantMetaValues}>
+          <strong>{application.applicantName}</strong>
+          <span className={styles.applicantDeptChip}>
+            {application.applicantDept}
+          </span>
+          {application.applicantEmail && (
+            <span className={styles.applicantEmailText}>
+              {application.applicantEmail}
+            </span>
+          )}
+        </div>
+      </div>
+
       <dl className={styles.detailGrid}>
-        <div className={styles.detailItem}>
-          <dt>지원자 이름 / 이메일</dt>
-          <dd>
-            {application.applicantName} ({application.applicantEmail})
-          </dd>
-        </div>
-        <div className={styles.detailItem}>
-          <dt>소속 학과</dt>
-          <dd>{application.applicantDept}</dd>
-        </div>
         <div className={styles.detailItemFull}>
           <dt>지원 부문</dt>
           <dd>
@@ -128,7 +140,7 @@ function SubmittedApplicationCard({
                 지원 취소
               </Button>
             )}
-            {isRevisionRequested && onStartRevision && (
+            {isRevisionRequested && !isDeadlineClosed && onStartRevision && (
               <Button
                 variant="primary"
                 size="md"

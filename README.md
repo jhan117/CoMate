@@ -2,7 +2,7 @@
 
 교내 수업, 공모전, 해커톤 팀원 모집부터 지원, 승인, 실시간 알림 및 1:1 쪽지까지 처리하는 풀스택 매칭 플랫폼입니다.
 
-> **Live Demo**: [https://co-mate-2026.vercel.app](https://co-mate-2026.vercel.app/) · Backend API: `https://comate-8szz.onrender.com`
+> **Live Demo**: [https://comate-8szz.onrender.com](https://comate-8szz.onrender.com/) (React + Express API + 실시간 Socket.IO 단일 배포)
 
 ## Team & Contribution Statement
 
@@ -23,7 +23,7 @@
 - **회원 인증**: 이메일 기반 회원가입·로그인·로그아웃, `bcrypt`(cost 10) 비밀번호 해싱 및 `express-session` 쿠키 인증(`httpOnly`, `sameSite`)
 - **팀원 모집 게시판**: 모집글 CRUD, 분류/학과 필터링, 검색, 학과별 정원 현황, 마감 상태(`마감`, `D-day`, `D-3` 임박) 뱃지 및 역할별 동선 분리
 - **지원 및 승인 관리**: 학과별 지원서 제출, 보완 요청 및 재제출, 승인/거절/지원 취소, 목표 인원 달성 시 자동 마감, 내 활동 허브(`내 모집/지원`)
-- **실시간 알림 센터**: 4개 탭(`전체`, `안 읽음`, `모집/지원`, `쪽지`), 단건/일괄 읽음 및 삭제, `Socket.IO` 실시간 갱신
+- **실시간 알림 센터 및 쪽지 뱃지 분리**: 상단 쪽지 안 읽은 대화 뱃지와 모집/지원 알림 벨(`전체`, `안 읽음`)을 분리하고 단건/일괄 읽음 및 삭제, `Socket.IO` 실시간 갱신 지원
 - **실시간 1:1 쪽지**: 대화방 개설, `Socket.IO` 기반 실시간 송수신, 수정, soft delete, 읽음 처리 및 알림 연동
 
 ## Getting Started
@@ -107,7 +107,7 @@ Node.js 20 이상과 PostgreSQL(`DATABASE_URL`) 환경이 필요합니다. **Git
 | Method | Path | Auth | Purpose |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/notifications` | Yes | 알림 목록 및 안 읽은 개수 조회 |
-| `PATCH` | `/api/notifications/read-all?filter=` | Yes | 필터(`all`, `unread`, `recruitment`, `message`) 일괄 읽음 |
+| `PATCH` | `/api/notifications/read-all?filter=` | Yes | 필터(`all`, `unread`, `recruitment`, `recruitment_unread`, `message`) 일괄 읽음 |
 | `DELETE` | `/api/notifications?filter=` | Yes | 필터 기준 일괄 삭제 |
 | `PATCH` | `/api/notifications/:id/read` | Yes (Recipient) | 단건 알림 읽음 처리 |
 | `DELETE` | `/api/notifications/:id` | Yes (Recipient) | 단건 알림 삭제 |
@@ -126,7 +126,7 @@ Node.js 20 이상과 PostgreSQL(`DATABASE_URL`) 환경이 필요합니다. **Git
 
 #### Socket.IO Events
 
-핸드셰이크 시 `sessionMiddleware`로 세션을 검증(미인증 시 `UNAUTHORIZED`)한 뒤 개인 룸(`user:<id>`)으로 이벤트를 발행합니다.
+핸드셰이크 시 `sessionMiddleware`로 세션을 검증(미인증 시 `UNAUTHORIZED`)한 뒤 개인 룸(`user:<id>`)과 세션 룸(`session:<sid>`)에 참가시켜 실시간 이벤트 발행 및 로그아웃 시 소켓 종료를 처리합니다.
 
 | Event | Target | Trigger |
 | :--- | :--- | :--- |
@@ -134,7 +134,7 @@ Node.js 20 이상과 PostgreSQL(`DATABASE_URL`) 환경이 필요합니다. **Git
 | `message:updated` | 참여자(`user1`, `user2`) | 쪽지 수정 |
 | `message:deleted` | 참여자(`user1`, `user2`) | 쪽지 soft delete |
 | `message:read` | 상대방 | 대화방 조회 또는 읽음 처리 |
-| `notification:updated` | 수신자 / 읽음 처리자 | 새 쪽지 알림 생성 또는 대화 읽음 반영 |
+| `notification:updated` | 수신자 / 읽음 처리자 | 지원/승인/보완/거절/마감 알림 또는 새 쪽지 알림 생성, 대화 읽음 반영 |
 
 </details>
 
@@ -249,9 +249,9 @@ npm test
 ```
 
 - `tests/01-invalid-login.test.js`: 미등록 이메일 및 잘못된 비밀번호 `401` + 동일 에러 메시지 검증
-- `tests/02-user-isolation.test.js`: 미인증 차단(`401`) 및 타 사용자 지원서/알림 열람, 수정, 삭제 차단(`403` 및 데이터 격리) 검증
+- `tests/02-user-isolation.test.js`: 미인증 차단(`401`), 타 사용자 지원서/알림 격리(`403`), `int4` 범위 초과 차단(`404`), 마감일 경과 모집글 지원 차단(`409`) 검증
 - `tests/03-logout-session.test.js`: 로그아웃 이후 기존 세션 쿠키 무효화(`401` 차단) 및 `/api/auth/me` 응답 정제 검증
-- `tests/04-messages-security.test.js`: 쪽지 CRUD, 읽음/알림 연동, 권한 격리(`401`/`403`/`404`/`409`), Socket.IO 인증 및 룸 격리 검증
+- `tests/04-messages-security.test.js`: 쪽지 CRUD, 읽음/알림 연동, 권한 격리(`401`/`403`/`404`/`409`), Socket.IO 인증, 룸 격리 및 로그아웃 시 활성 소켓 강제 종료 검증
 - `tests/05-auth-posts-security.test.js`: 회원가입 유효성/이메일 중복(`400`/`409`), `bcrypt` 해싱, 로그인, 모집글 CRUD·소유권 격리(`401`/`403`/`404`)·지원서 보호(`409`) 검증
 
 ## Project Structure

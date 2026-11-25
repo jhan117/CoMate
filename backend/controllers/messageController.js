@@ -1,11 +1,8 @@
 const messageModel = require('../models/messageModel');
 const notificationModel = require('../models/notificationModel');
+const userModel = require('../models/userModel');
 const { emitToUser } = require('../socket');
-const { isIntegerId } = require('../utils/validation');
-
-function cleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
+const { cleanText, isIntegerId } = require('../utils/validation');
 
 function stripInternalParticipants(chatMessage) {
   if (!chatMessage) return null;
@@ -86,7 +83,8 @@ const messageController = {
         .json({ message: '본인에게는 쪽지를 보낼 수 없습니다.' });
     }
 
-    const recipient = await messageModel.findUserById(recipientId);
+    const recipientRow = await userModel.findById(recipientId);
+    const recipient = recipientRow ? userModel.publicUser(recipientRow) : null;
     if (!recipient) {
       return res
         .status(404)

@@ -23,6 +23,7 @@ export default function Body({ user, authLoading }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
 
   if (prevUserId !== userId) {
     setPrevUserId(userId)
@@ -30,6 +31,7 @@ export default function Body({ user, authLoading }) {
     setDeleteTarget(null)
     setError('')
     setFormError('')
+    setDeleteError('')
   }
 
   useEffect(() => {
@@ -65,11 +67,19 @@ export default function Body({ user, authLoading }) {
     setFormError('')
     setEditor(post)
   }
-
   const closeEditor = useCallback(() => {
     setFormError('')
     setEditor(null)
   }, [])
+
+  function openDeleteModal(post) {
+    setDeleteError('')
+    setDeleteTarget(post)
+  }
+  function closeDeleteModal() {
+    setDeleteError('')
+    setDeleteTarget(null)
+  }
 
   async function save(fields) {
     setBusy(true)
@@ -96,7 +106,7 @@ export default function Body({ user, authLoading }) {
     if (!deleteTarget) return
 
     setBusy(true)
-    setError('')
+    setDeleteError('')
 
     try {
       await deletePost(deleteTarget.id)
@@ -105,8 +115,7 @@ export default function Body({ user, authLoading }) {
       setDepartment('')
       setDeleteTarget(null)
     } catch (err) {
-      setError(err.message)
-      setDeleteTarget(null)
+      setDeleteError(err.message)
     } finally {
       setBusy(false)
     }
@@ -172,7 +181,7 @@ export default function Body({ user, authLoading }) {
             canEdit={Boolean(userId) && userId === post.authorId}
             busy={busy}
             onEdit={() => openEditor(post)}
-            onDelete={() => setDeleteTarget(post)}
+            onDelete={() => openDeleteModal(post)}
           />
         ))}
       </section>
@@ -182,12 +191,13 @@ export default function Body({ user, authLoading }) {
         title="모집글 삭제"
         description="이 모집글을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
         preview={deleteTarget?.title || ''}
+        error={deleteError}
         confirmLabel="삭제"
         cancelLabel="취소"
         confirmVariant="dangerSolid"
         busy={busy}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={closeDeleteModal}
       />
     </main>
   )

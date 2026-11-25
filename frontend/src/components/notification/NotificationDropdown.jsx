@@ -3,10 +3,7 @@ import Button from "../common/Button";
 import Callout from "../common/Callout";
 import ConfirmModal from "../common/ConfirmModal";
 import NotificationItem from "./NotificationItem";
-import {
-  NOTIFICATION_TYPES,
-  emitApplicationPageRefresh,
-} from "../../constants/notificationConstants";
+import { emitApplicationPageRefresh } from "../../constants/notificationConstants";
 import styles from "./NotificationDropdown.module.css";
 
 const STORAGE_KEY_NOTI_FILTER = "comate:notification-filter";
@@ -14,8 +11,6 @@ const STORAGE_KEY_NOTI_FILTER = "comate:notification-filter";
 const FILTER_LABELS = {
   all: "전체",
   unread: "안 읽음",
-  recruitment: "모집·지원",
-  message: "쪽지",
 };
 
 function NotificationDropdown({
@@ -30,9 +25,10 @@ function NotificationDropdown({
   onClearError,
   onClose,
 }) {
-  const [filter, setFilter] = useState(
-    () => window.sessionStorage.getItem(STORAGE_KEY_NOTI_FILTER) || "all"
-  );
+  const [filter, setFilter] = useState(() => {
+    const saved = window.sessionStorage.getItem(STORAGE_KEY_NOTI_FILTER);
+    return saved === "unread" ? "unread" : "all";
+  });
   const [confirmDeleteAllOpen, setConfirmDeleteAllOpen] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
 
@@ -41,34 +37,21 @@ function NotificationDropdown({
     window.sessionStorage.setItem(STORAGE_KEY_NOTI_FILTER, nextFilter);
   };
 
-  const recruitmentNotifications = notifications.filter(
-    (n) => n.type !== NOTIFICATION_TYPES.MESSAGE_NEW
-  );
-  const messageNotifications = notifications.filter(
-    (n) => n.type === NOTIFICATION_TYPES.MESSAGE_NEW
-  );
-
   const filteredList =
     filter === "unread"
       ? notifications.filter((n) => !n.isRead)
-      : filter === "recruitment"
-      ? recruitmentNotifications
-      : filter === "message"
-      ? messageNotifications
       : notifications;
 
   const filteredUnreadCount = filteredList.filter((n) => !n.isRead).length;
   const activeFilterLabel = FILTER_LABELS[filter] || "전체";
+  const apiFilter = filter === "unread" ? "recruitment_unread" : "recruitment";
 
   const handleNavigate = (targetPath, applicationId = "") => {
     const hash = applicationId
       ? `#application-${encodeURIComponent(applicationId)}`
       : "";
     onClose();
-    if (
-      window.location.pathname === targetPath &&
-      !targetPath.startsWith("/messages")
-    ) {
+    if (window.location.pathname === targetPath) {
       if (hash) {
         window.history.replaceState(null, "", `${targetPath}${hash}`);
       }
@@ -81,7 +64,7 @@ function NotificationDropdown({
   const handleConfirmDeleteAll = async () => {
     setDeletingAll(true);
     try {
-      const ok = await onDeleteAll(filter);
+      const ok = await onDeleteAll(apiFilter);
       if (ok) {
         setConfirmDeleteAllOpen(false);
       }
@@ -119,7 +102,7 @@ function NotificationDropdown({
             variant="secondary"
             size="sm"
             disabled={filteredUnreadCount === 0 || deletingAll}
-            onClick={() => onReadAll(filter)}
+            onClick={() => onReadAll(apiFilter)}
           >
             모두 읽음
           </Button>
@@ -153,24 +136,6 @@ function NotificationDropdown({
         >
           안 읽음 ({unreadCount})
         </button>
-        <button
-          type="button"
-          className={`${styles.tabBtn} ${
-            filter === "recruitment" ? styles.tabActive : ""
-          }`}
-          onClick={() => handleFilterChange("recruitment")}
-        >
-          모집·지원 ({recruitmentNotifications.length})
-        </button>
-        <button
-          type="button"
-          className={`${styles.tabBtn} ${
-            filter === "message" ? styles.tabActive : ""
-          }`}
-          onClick={() => handleFilterChange("message")}
-        >
-          쪽지 ({messageNotifications.length})
-        </button>
       </div>
 
       {error && (
@@ -186,10 +151,6 @@ function NotificationDropdown({
           <p className={styles.emptyTitle}>
             {filter === "unread"
               ? "읽지 않은 알림이 없습니다."
-              : filter === "message"
-              ? "도착한 쪽지 알림이 없습니다."
-              : filter === "recruitment"
-              ? "모집·지원 관련 알림이 없습니다."
               : "도착한 알림이 없습니다."}
           </p>
         </div>

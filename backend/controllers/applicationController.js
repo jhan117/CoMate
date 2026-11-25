@@ -1,12 +1,8 @@
 const applicationModel = require('../models/applicationModel');
 const notificationModel = require('../models/notificationModel');
 
-const { isIntegerId } = require('../utils/validation');
+const { cleanText, isIntegerId } = require('../utils/validation');
 const { emitToUser } = require('../socket');
-
-function cleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
 
 function isDeadlinePassed(deadline) {
   if (!deadline) return false;

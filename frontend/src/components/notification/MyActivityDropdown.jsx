@@ -8,7 +8,7 @@ import styles from "./NotificationDropdown.module.css";
 
 const STORAGE_KEY_ACTIVITY_TAB = "comate:my-activity-tab";
 
-function MyActivityDropdown({ onClose }) {
+function MyActivityDropdown({ activeUser, onClose }) {
   const [tab, setTab] = useState(
     () => window.sessionStorage.getItem(STORAGE_KEY_ACTIVITY_TAB) || "author"
   );
@@ -74,8 +74,13 @@ function MyActivityDropdown({ onClose }) {
       aria-label="내 모집 및 지원 현황"
     >
       <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h3 className={styles.headerTitle}>내 모집·지원 현황</h3>
+        <div className={styles.headerTitleGroup}>
+          <h3 className={styles.headerTitle}>내 모집 및 지원 현황</h3>
+          {activeUser && (
+            <p className={styles.headerSubMeta}>
+              {activeUser.name} ({activeUser.dept})
+            </p>
+          )}
         </div>
       </div>
 
