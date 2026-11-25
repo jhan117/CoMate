@@ -25,8 +25,15 @@
 
 .profile {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.profileText {
+  min-width: 0;
+  flex: 1;
 }
 
 .avatar {
@@ -40,6 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .nameRow {
@@ -57,8 +65,11 @@
 }
 
 .email {
+  margin: 0 0 4px;
   font-size: 13px;
   color: #6b7280;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .originDept {

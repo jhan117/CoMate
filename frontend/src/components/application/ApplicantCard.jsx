@@ -30,14 +30,9 @@ function ApplicantCard({
           <div className={styles.avatar}>
             {application.applicantName.slice(0, 1)}
           </div>
-          <div>
+          <div className={styles.profileText}>
             <div className={styles.nameRow}>
               <h3 className={styles.name}>{application.applicantName}</h3>
-              {application.applicantEmail && (
-                <span className={styles.email}>
-                  ({application.applicantEmail})
-                </span>
-              )}
               <span className={styles.originDept}>
                 소속: {application.applicantDept}
               </span>
@@ -45,6 +40,9 @@ function ApplicantCard({
                 <span className={styles.resubmittedBadge}>보완 재제출됨</span>
               )}
             </div>
+            {application.applicantEmail && (
+              <p className={styles.email}>{application.applicantEmail}</p>
+            )}
             <span className={styles.appliedAt}>
               지원 일시: {formatDate(application.createdAt)}
               {application.updatedAt
