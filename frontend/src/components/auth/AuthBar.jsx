@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { login, logout, signup } from '../../api/authApi'
 import Button from '../common/Button'
 import Callout from '../common/Callout'
@@ -9,13 +9,16 @@ export default function AuthBar({ user, onUserChange, authLoading }) {
   const [mode, setMode] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const userId = user?.id
+  const [prevUserId, setPrevUserId] = useState(userId)
 
-  useEffect(() => {
+  if (prevUserId !== userId) {
+    setPrevUserId(userId)
     if (user) {
       setMode(null)
       setError('')
     }
-  }, [user])
+  }
 
   const signingUp = mode === 'signup'
 

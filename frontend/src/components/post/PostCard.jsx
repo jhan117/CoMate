@@ -99,7 +99,7 @@ export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDe
               size="sm"
               className={card.applicantAction}
             >
-              {isFull ? '정원 마감' : isClosed ? '현황 보기' : '지원하기'}
+              {isClosed ? '현황 보기' : '지원하기'}
             </Button>
           )}
         </div>
