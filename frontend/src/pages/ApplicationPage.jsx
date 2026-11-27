@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../components/common/Button";
 import SubPageTopBar from "../components/common/SubPageTopBar";
 import PostSummaryCard from "../components/application/PostSummaryCard";
@@ -7,12 +7,14 @@ import SubmittedApplicationCard from "../components/application/SubmittedApplica
 import ApplicantFilterBar from "../components/application/ApplicantFilterBar";
 import ApplicantCard from "../components/application/ApplicantCard";
 import Callout from "../components/common/Callout";
+import { NOTIFICATION_EVENTS } from "../constants/notificationConstants";
 import { usePostApplication } from "../hooks/usePostApplication";
 import { getDeadlineMeta, isDeptFull } from "../utils/applicationUtils";
 import styles from "./ApplicationPage.module.css";
 
 function ApplicationPage({ postId }) {
   const [mobileTab, setMobileTab] = useState("work");
+  const [prevHighlightedAppId, setPrevHighlightedAppId] = useState(null);
   const {
     post,
     applications,
@@ -28,6 +30,30 @@ function ApplicationPage({ postId }) {
     filters,
     actions,
   } = usePostApplication(postId);
+
+  if (highlightedAppId !== prevHighlightedAppId) {
+    setPrevHighlightedAppId(highlightedAppId);
+    if (highlightedAppId && mobileTab !== "work") {
+      setMobileTab("work");
+    }
+  }
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      setMobileTab("work");
+    };
+
+    window.addEventListener(
+      NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH,
+      handleRefresh
+    );
+    return () => {
+      window.removeEventListener(
+        NOTIFICATION_EVENTS.APPLICATION_PAGE_REFRESH,
+        handleRefresh
+      );
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -86,7 +112,7 @@ function ApplicationPage({ postId }) {
         <SubPageTopBar currentLabel={topBarLabel} />
 
         {feedbackBanner && (
-          <div role="status" style={{ marginBottom: "16px" }}>
+          <div role="status">
             <Callout
               variant={feedbackBanner.type === "error" ? "danger" : "success"}
               onClose={actions.clearFeedback}
