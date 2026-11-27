@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Button from "../components/common/Button";
+import SubPageTopBar from "../components/common/SubPageTopBar";
 import Callout from "../components/common/Callout";
 import ConfirmModal from "../components/common/ConfirmModal";
 import ConversationList from "../components/messages/ConversationList";
@@ -48,19 +48,15 @@ function MessagesPage() {
     return (
       <main className={styles.pageWrapper}>
         <div className={styles.pageContainer}>
+          <SubPageTopBar currentLabel="1:1 쪽지함" />
+
           <div className={styles.loginRequiredCard}>
             <Callout
               variant="neutralBordered"
               title="로그인이 필요한 서비스입니다"
             >
-              {error ||
-                "쪽지를 주고받거나 대화 내역을 확인하려면 먼저 로그인해 주세요."}
+              쪽지를 주고받거나 대화 내역을 확인하려면 상단의 &apos;로그인&apos; 버튼으로 로그인해 주세요. 로그인하면 이 페이지에서 바로 쪽지함을 이용할 수 있습니다.
             </Callout>
-            <div style={{ marginTop: "16px" }}>
-              <Button as="a" href="/" variant="primary" size="md">
-                메인 화면으로 이동하여 로그인하기
-              </Button>
-            </div>
           </div>
         </div>
       </main>
@@ -70,6 +66,7 @@ function MessagesPage() {
   return (
     <main className={styles.pageWrapper}>
       <div className={styles.pageContainer}>
+        <SubPageTopBar currentLabel="1:1 쪽지함" />
         {feedbackBanner && !activeConversation && (
           <div role="alert">
             <Callout

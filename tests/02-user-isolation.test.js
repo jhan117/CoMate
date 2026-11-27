@@ -123,8 +123,78 @@ async function run() {
     );
     assert.equal(deleteNotiRes.status, 403, '타인 알림 삭제는 403이어야 합니다.');
 
+    // 5. int4(32비트 양의 정수) 범위 초과 ID 입력 시 500 대신 404 반환 (R5)
+    const overflowId = '2147483648';
+    const overflowAppRes = await request(
+      baseUrl,
+      `/api/applications/${overflowId}`,
+      {},
+      userBCookie
+    );
+    assert.equal(
+      overflowAppRes.status,
+      404,
+      'int4 범위 초과 지원서 ID 조회는 500이 아니라 404여야 합니다.'
+    );
+
+    const overflowPostAppsRes = await request(
+      baseUrl,
+      `/api/applications?postId=${overflowId}`,
+      {},
+      userBCookie
+    );
+    assert.equal(
+      overflowPostAppsRes.status,
+      404,
+      'int4 범위 초과 postId 조회는 500이 아니라 404여야 합니다.'
+    );
+
+    const overflowNotiRes = await request(
+      baseUrl,
+      `/api/notifications/${overflowId}/read`,
+      { method: 'PATCH' },
+      userBCookie
+    );
+    assert.equal(
+      overflowNotiRes.status,
+      404,
+      'int4 범위 초과 알림 ID 처리는 500이 아니라 404여야 합니다.'
+    );
+
+    const overflowConvRes = await request(
+      baseUrl,
+      `/api/messages/conversations/${overflowId}`,
+      {},
+      userBCookie
+    );
+    assert.equal(
+      overflowConvRes.status,
+      404,
+      'int4 범위 초과 대화방 ID 조회는 500이 아니라 404여야 합니다.'
+    );
+
+    // 6. 마감일 경과 모집글(시드 Post 8, 마감일 -2일) 지원 시 409 차단
+    const expiredApplyRes = await request(
+      baseUrl,
+      '/api/applications',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          postId: '8',
+          targetDept: '컴퓨터공학과',
+          message: '마감일 경과 모집글 지원 차단 테스트입니다.',
+        }),
+      },
+      userBCookie
+    );
+    assert.equal(
+      expiredApplyRes.status,
+      409,
+      '마감일이 지난 모집글 지원은 409로 차단되어야 합니다.'
+    );
+
     console.log(
-      '[PASS] Test 2: 타 사용자(User B)의 지원서/알림 열람·수정·삭제 차단(403 및 데이터 격리) 확인'
+      '[PASS] Test 2: 타 사용자(User B)의 지원서/알림 격리(403), int4 범위 검증(404), 마감일 경과 차단(409) 확인'
     );
   });
 }

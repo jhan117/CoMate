@@ -1,14 +1,8 @@
 const messageModel = require('../models/messageModel');
 const notificationModel = require('../models/notificationModel');
+const userModel = require('../models/userModel');
 const { emitToUser } = require('../socket');
-
-function cleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function isIntegerId(value) {
-  return /^\d+$/.test(String(value || '').trim());
-}
+const { cleanText, isIntegerId } = require('../utils/validation');
 
 function stripInternalParticipants(chatMessage) {
   if (!chatMessage) return null;
@@ -89,7 +83,8 @@ const messageController = {
         .json({ message: '본인에게는 쪽지를 보낼 수 없습니다.' });
     }
 
-    const recipient = await messageModel.findUserById(recipientId);
+    const recipientRow = await userModel.findById(recipientId);
+    const recipient = recipientRow ? userModel.publicUser(recipientRow) : null;
     if (!recipient) {
       return res
         .status(404)
@@ -396,6 +391,24 @@ const messageController = {
       messageModel.findConversationById(existing.conversationId, existing.user2Id),
     ]);
 
+    const recipientId =
+      existing.user1Id === sessionUserId ? existing.user2Id : existing.user1Id;
+    const recipientConversation =
+      existing.user1Id === sessionUserId ? convForUser2 : convForUser1;
+
+    let notificationCleared = false;
+    if (
+      !existing.isRead &&
+      recipientConversation &&
+      recipientConversation.unreadCount === 0
+    ) {
+      notificationCleared =
+        await notificationModel.markMessageNotificationsAsReadByConversation(
+          recipientId,
+          existing.conversationId
+        );
+    }
+
     emitToUser(existing.user1Id, 'message:deleted', {
       conversationId: existing.conversationId,
       messageId: existing.id,
@@ -408,6 +421,11 @@ const messageController = {
       chatMessage,
       conversation: convForUser2,
     });
+    if (notificationCleared) {
+      emitToUser(recipientId, 'notification:updated', {
+        conversationId: existing.conversationId,
+      });
+    }
 
     const senderConversation =
       existing.user1Id === sessionUserId ? convForUser1 : convForUser2;

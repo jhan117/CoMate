@@ -1,12 +1,15 @@
 const applicationModel = require('../models/applicationModel');
 const notificationModel = require('../models/notificationModel');
 
-function cleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
+const { cleanText, isIntegerId } = require('../utils/validation');
+const { emitToUser } = require('../socket');
 
-function isIntegerId(value) {
-  return /^\d+$/.test(String(value || '').trim());
+function isDeadlinePassed(deadline) {
+  if (!deadline) return false;
+  const todayKst = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul',
+  }).format(new Date());
+  return String(deadline) < todayKst;
 }
 
 const applicationController = {
@@ -30,7 +33,9 @@ const applicationController = {
     const sessionUserId = req.userId;
 
     if (!postId) {
-      return res.status(400).json({ message: 'postId 파라미터가 필요합니다.' });
+      return res
+        .status(400)
+        .json({ message: '조회할 모집글 정보가 필요합니다.' });
     }
     if (!isIntegerId(postId)) {
       return res.status(404).json({ message: '모집글을 찾을 수 없습니다.' });
@@ -117,6 +122,12 @@ const applicationController = {
         .json({ message: '본인이 작성한 모집글에는 지원할 수 없습니다.' });
     }
 
+    if (isDeadlinePassed(post.deadline)) {
+      return res.status(409).json({
+        message: '모집 마감일이 지나 지원할 수 없습니다.',
+      });
+    }
+
     const existingApp = await applicationModel.findByPostAndApplicant(
       postId,
       user.id
@@ -144,12 +155,22 @@ const applicationController = {
       });
     }
 
-    const newApplication = await applicationModel.create({
-      postId,
-      user,
-      targetDept,
-      message,
-    });
+    let newApplication;
+    try {
+      newApplication = await applicationModel.create({
+        postId,
+        user,
+        targetDept,
+        message,
+      });
+    } catch (error) {
+      if (error.code === '23505') {
+        return res
+          .status(409)
+          .json({ message: '이미 이 모집글에 지원서를 제출하셨습니다.' });
+      }
+      throw error;
+    }
 
     await notificationModel.create({
       recipientId: post.authorId,
@@ -159,6 +180,7 @@ const applicationController = {
       title: '신규 지원서 접수',
       message: `[${post.title}] '${user.name}' 님이 '${targetDept}' 부문에 지원했습니다.`,
     });
+    emitToUser(post.authorId, 'notification:updated', { postId: post.id });
 
     const updatedPost = await applicationModel.findPostById(post.id);
 
@@ -213,6 +235,11 @@ const applicationController = {
         .status(404)
         .json({ message: '연결된 모집글을 찾을 수 없습니다.' });
     }
+    if (isDeadlinePassed(post.deadline)) {
+      return res.status(409).json({
+        message: '모집 마감일이 지나 지원서를 다시 제출할 수 없습니다.',
+      });
+    }
 
     const dept = post.departments.find((d) => d.deptName === targetDept);
     if (!dept) {
@@ -230,6 +257,11 @@ const applicationController = {
       targetDept,
       message,
     });
+    if (!updatedApplication) {
+      return res.status(409).json({
+        message: '이미 처리되었거나 보완 재제출할 수 없는 지원서입니다.',
+      });
+    }
 
     await notificationModel.create({
       recipientId: post.authorId,
@@ -239,10 +271,14 @@ const applicationController = {
       title: '보완 지원서 재제출',
       message: `[${post.title}] '${updatedApplication.applicantName}' 님이 '${targetDept}' 부문 지원서를 보완하여 다시 제출했습니다.`,
     });
+    emitToUser(post.authorId, 'notification:updated', { postId: post.id });
+
+    const updatedPost = await applicationModel.findPostById(post.id);
 
     return res.status(200).json({
       message: '보완된 지원서가 다시 제출되었습니다.',
       application: updatedApplication,
+      post: updatedPost,
     });
   },
 
@@ -251,6 +287,12 @@ const applicationController = {
     const status = cleanText(req.body?.status);
     const feedback = cleanText(req.body?.feedback);
     const sessionUserId = req.userId;
+
+    if (feedback.length > 1000) {
+      return res.status(400).json({
+        message: '보완 요청 및 거절 사유는 1000자 이하로 입력해 주세요.',
+      });
+    }
 
     if (!['approved', 'revision_requested', 'rejected'].includes(status)) {
       return res.status(400).json({ message: '유효하지 않은 상태 값입니다.' });
@@ -300,35 +342,44 @@ const applicationController = {
 
     let isDeptNowClosed = false;
     let closedDept = null;
+    let updatedApplication = null;
 
     if (status === 'approved') {
-      const incrementResult = await applicationModel.incrementPostDeptMember(
-        post.id,
-        application.targetDept
+      const approveResult = await applicationModel.approveApplication(
+        application.id,
+        post.id
       );
 
-      if (incrementResult.error === 'DEPT_NOT_FOUND') {
+      if (approveResult.error === 'APP_NOT_FOUND') {
+        return res
+          .status(404)
+          .json({ message: '지원서를 찾을 수 없습니다.' });
+      }
+      if (approveResult.error === 'ALREADY_PROCESSED') {
+        return res.status(409).json({
+          message: `이미 ${approveResult.status === 'approved' ? '승인' : '거절'} 확정된 지원서입니다.`,
+        });
+      }
+      if (approveResult.error === 'DEPT_NOT_FOUND') {
         return res
           .status(400)
           .json({ message: '지원 부문 정보를 찾을 수 없습니다.' });
       }
-      if (incrementResult.error === 'DEPT_FULL') {
+      if (approveResult.error === 'DEPT_FULL') {
         return res.status(400).json({
-          message: `'${incrementResult.dept.deptName}' 부문의 모집 정원(${incrementResult.dept.maxMembers}명)이 이미 마감되었습니다.`,
+          message: `'${approveResult.dept.deptName}' 부문의 모집 정원(${approveResult.dept.maxMembers}명)이 이미 마감되었습니다.`,
         });
       }
 
-      closedDept = incrementResult.dept;
+      closedDept = approveResult.dept;
       isDeptNowClosed = closedDept.currentMembers >= closedDept.maxMembers;
+      updatedApplication = approveResult.application;
+    } else {
+      updatedApplication = await applicationModel.updateStatus(
+        application.id,
+        { status, feedback }
+      );
     }
-
-    const updatedApplication = await applicationModel.updateStatus(
-      application.id,
-      {
-        status,
-        feedback: status === 'approved' ? '' : feedback,
-      }
-    );
 
     if (status === 'approved') {
       await notificationModel.create({
@@ -338,6 +389,9 @@ const applicationController = {
         type: 'application_approved',
         title: '지원 승인 완료',
         message: `[${post.title}] '${updatedApplication.targetDept}' 부문 지원이 승인되어 팀원으로 확정되었습니다.`,
+      });
+      emitToUser(updatedApplication.applicantId, 'notification:updated', {
+        postId: post.id,
       });
 
       if (isDeptNowClosed && closedDept) {
@@ -358,6 +412,9 @@ const applicationController = {
             title: '모집 정원 마감 안내',
             message: `[${post.title}] 지원하신 '${closedDept.deptName}' 부문의 모집 정원이 마감되어 지원이 자동 마감 처리되었습니다.`,
           });
+          emitToUser(rejectedApp.applicantId, 'notification:updated', {
+            postId: post.id,
+          });
         }
 
         await notificationModel.create({
@@ -367,10 +424,11 @@ const applicationController = {
           type: 'recruitment_closed',
           title: '모집 부문 정원 마감',
           message: `[${post.title}] '${closedDept.deptName}' 부문 정원(${closedDept.maxMembers}명)이 모두 채워져 마감이 완료되었습니다.${autoRejectedApps.length > 0
-              ? ` (대기중 지원자 ${autoRejectedApps.length}명 자동 마감 처리)`
-              : ''
+            ? ` (대기중 지원자 ${autoRejectedApps.length}명 자동 마감 처리)`
+            : ''
             }`,
         });
+        emitToUser(post.authorId, 'notification:updated', { postId: post.id });
       }
     } else if (status === 'revision_requested') {
       await notificationModel.create({
@@ -381,6 +439,9 @@ const applicationController = {
         title: '지원서 보완 요청',
         message: `[${post.title}] 작성자가 '${updatedApplication.targetDept}' 부문 지원서에 대해 보완을 요청했습니다: ${feedback}`,
       });
+      emitToUser(updatedApplication.applicantId, 'notification:updated', {
+        postId: post.id,
+      });
     } else if (status === 'rejected') {
       await notificationModel.create({
         recipientId: updatedApplication.applicantId,
@@ -389,6 +450,9 @@ const applicationController = {
         type: 'application_rejected',
         title: '지원 결과 안내 (거절)',
         message: `[${post.title}] '${updatedApplication.targetDept}' 부문 지원이 거절되었습니다. 사유: ${feedback}`,
+      });
+      emitToUser(updatedApplication.applicantId, 'notification:updated', {
+        postId: post.id,
       });
     }
 
@@ -436,7 +500,12 @@ const applicationController = {
       });
     }
 
-    await applicationModel.removeById(application.id);
+    const removed = await applicationModel.removeById(application.id);
+    if (!removed) {
+      return res.status(409).json({
+        message: '이미 처리되었거나 취소할 수 없는 지원서입니다.',
+      });
+    }
     const updatedPost = await applicationModel.findPostById(application.postId);
 
     return res.status(200).json({

@@ -1,4 +1,20 @@
-/* 공통 요소 */
+.sidebarCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+}
+
+.badgeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .categoryBadge {
   display: inline-flex;
   align-items: center;
@@ -10,30 +26,262 @@
   border-radius: 999px;
 }
 
+.deadlineGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deadlineBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.urgent {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.soon {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.open {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.closed {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.deadlineText {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.title {
+  font-size: 18.5px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.authorRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.author {
+  font-size: 13.5px;
+  color: #4b5563;
+  margin: 0;
+}
+
+.recruitSummaryBadge {
+  background-color: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.statChip,
+.statChipAccent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.statChip {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.statChipLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.statChipCount {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.statChipAccent {
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.statChipLabelAccent {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4338ca;
+}
+
+.statChipCountAccent {
+  font-size: 15px;
+  font-weight: 800;
+  color: #312e81;
+}
+
+.contentSection {
+  margin-bottom: 16px;
+}
+
+.contentToggleBtn {
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4f46e5;
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.contentToggleBtn:hover {
+  background-color: #e0e7ff;
+}
+
+.contentBody {
+  margin-top: 10px;
+}
+
+.quotaSection {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 14px;
+}
+
+.quotaSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 .subTitle {
   font-size: 12px;
   font-weight: 700;
   color: #6b7280;
 }
 
+.totalSupportTag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.quotaList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.quotaItem {
+  background-color: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.quotaItemFull {
+  background-color: #f3f4f6;
+  opacity: 0.88;
+}
+
+.quotaTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .deptName {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   color: #1f2937;
 }
 
+.quotaNumbers {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.memberRatio {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.memberRatioFull {
+  color: #6b7280;
+}
+
 .applicantCountPill {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: #4f46e5;
   background-color: #eef2ff;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
+}
+
+.stateBadge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.stateOpen {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.stateFull {
+  background-color: #e5e7eb;
+  color: #4b5563;
 }
 
 .progressTrack {
   width: 100%;
-  height: 6px;
+  height: 5px;
   background-color: #e5e7eb;
   border-radius: 999px;
   overflow: hidden;
@@ -48,296 +296,4 @@
 
 .progressFillFull {
   background: #9ca3af;
-}
-
-/* 1. 지원자 화면: 좌측 사이드바 카드 */
-.sidebarCard {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
-}
-
-.sidebarBadgeRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.deadlineText {
-  font-size: 12.5px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.sidebarTitle {
-  font-size: 19px;
-  font-weight: 800;
-  color: #111827;
-  line-height: 1.4;
-  margin-bottom: 6px;
-}
-
-.sidebarAuthorRow {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.sidebarAuthor {
-  font-size: 13.5px;
-  color: #4b5563;
-  margin: 0;
-}
-
-.contentSection {
-  margin-bottom: 18px;
-}
-
-.quotaSection {
-  border-top: 1px solid #f3f4f6;
-  padding-top: 16px;
-}
-
-.quotaSectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.totalSupportTag {
-  font-size: 12px;
-  font-weight: 700;
-  color: #374151;
-}
-
-.sidebarQuotaList {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sidebarQuotaItem {
-  background-color: #f9fafb;
-  border: 1px solid #f3f4f6;
-  border-radius: 10px;
-  padding: 11px 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebarQuotaTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.sidebarQuotaNumbers {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.memberRatio {
-  font-size: 13px;
-  font-weight: 700;
-  color: #2563eb;
-}
-
-.memberRatioFull {
-  color: #6b7280;
-}
-
-/* 2. 작성자 화면: 상단 와이드 배너 카드 */
-.bannerCard {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
-}
-
-.bannerHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.bannerTitleArea {
-  flex: 1;
-  min-width: 260px;
-}
-
-.bannerBadgeRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.recruitSummaryBadge {
-  background-color: #f3f4f6;
-  color: #374151;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.bannerTitle {
-  font-size: 21px;
-  font-weight: 800;
-  color: #111827;
-  line-height: 1.35;
-  margin-bottom: 6px;
-}
-
-.bannerMeta {
-  font-size: 13.5px;
-  color: #6b7280;
-}
-
-.contentToggleBtn {
-  margin-top: 10px;
-  padding: 5px 12px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #4f46e5;
-  background-color: #eef2ff;
-  border: 1px solid #c7d2fe;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.contentToggleBtn:hover {
-  background-color: #e0e7ff;
-}
-
-.bannerContentBox {
-  margin-bottom: 18px;
-}
-
-.statBoxGroup {
-  display: flex;
-  gap: 10px;
-}
-
-.statBox {
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px 18px;
-  text-align: center;
-  min-width: 110px;
-}
-
-.statLabel {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.statCount {
-  font-size: 20px;
-  font-weight: 800;
-  color: #111827;
-}
-
-.statBoxAccent {
-  background-color: #eef2ff;
-  border: 1px solid #c7d2fe;
-  border-radius: 12px;
-  padding: 12px 18px;
-  text-align: center;
-  min-width: 110px;
-}
-
-.statLabelAccent {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #4338ca;
-  margin-bottom: 4px;
-}
-
-.statCountAccent {
-  font-size: 20px;
-  font-weight: 800;
-  color: #312e81;
-}
-
-.bannerQuotaGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-  border-top: 1px solid #f3f4f6;
-  padding-top: 18px;
-}
-
-.bannerQuotaCard {
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.bannerQuotaCardFull {
-  background-color: #f3f4f6;
-  opacity: 0.85;
-}
-
-.bannerQuotaTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stateBadge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.stateOpen {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-}
-
-.stateFull {
-  background-color: #e5e7eb;
-  color: #4b5563;
-}
-
-.bannerQuotaBottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bannerQuotaCount {
-  font-size: 14px;
-  color: #374151;
-}
-
-.bannerQuotaCount strong {
-  font-size: 18px;
-  color: #2563eb;
 }

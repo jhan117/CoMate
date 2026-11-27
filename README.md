@@ -2,14 +2,14 @@
 
 교내 수업, 공모전, 해커톤 팀원 모집부터 지원, 승인, 실시간 알림 및 1:1 쪽지까지 처리하는 풀스택 매칭 플랫폼입니다.
 
-> **Live Demo**: [https://co-mate-2026.vercel.app](https://co-mate-2026.vercel.app/) · Backend API: `https://comate-8szz.onrender.com`
+> **Live Demo**: [https://comate-8szz.onrender.com](https://comate-8szz.onrender.com/) (React + Express API + 실시간 Socket.IO 단일 배포)
 
 ## Team & Contribution Statement
 
 | 팀원 | GitHub | 담당 영역 및 구현 기능 |
 | :--- | :--- | :--- |
-| **권기영 (Kaye)** | `@jhan117` | **초기 세팅, DB 및 실행 통합**: 프로젝트 초기 세팅, 루트 `npm install`/`start` 정적 서빙, Vercel/Render 배포 설정, Docker Compose 및 GitHub Codespaces(`.devcontainer`) 환경 구성, PostgreSQL(Supabase) 스키마 및 가상 시드 데이터(`backend/db/*`)<br>**지원/승인, 알림 및 실시간 1:1 쪽지**: 지원서 제출/보완/승인/거절/취소, 알림 센터 및 내 모집/지원 허브, `Socket.IO` 실시간 알림 및 1:1 쪽지(`conversations`, `messages`)<br>**인증/보안 통합 및 공용 UI 정리**: `requireAuth`(`publicUser` 정제) 및 소유권 검증, 이메일 인증 통합 마이그레이션(지원/쪽지 모델·컴포넌트·테스트), 보안 테스트 4종(`tests/01` ~ `04`), 공용 `httpClient`/`Modal`/`MessageIcon` 추출, `PostForm` 모달, 카드 동선/마감 뱃지 및 세션 동기화 |
-| **김희서 (Ella)** | `@HeeSeoKim-73` | **회원 인증 및 보안**: 이메일 기반 회원가입/로그인/로그아웃 API(`authController`, `userModel`, `routes/auth`), `bcrypt`(cost 10) 비밀번호 해싱 및 평문 인증 제거, `express-session` 적용 및 세션 비밀키 32자 이상 검증, 헤더 로그인/회원가입 모달(`AuthBar`)<br>**모집글 CRUD 및 보안 테스트**: PostgreSQL 기반 모집글 CRUD API 및 트랜잭션(`postController`, `postModel`, `routes/posts`), 게시판 검색/분류/학과 필터(`Body`, `PostFilters`, `PostForm`, `PostCard`), 도메인별 컴포넌트/CSS 모듈 분리, 회원가입·모집글 보안 테스트(`tests/05`) |
+| **권기영 (Kaye)** | `@jhan117` | **초기 세팅, DB 및 실행 통합**: 프로젝트 초기 세팅, 루트 `npm install`/`start` 정적 서빙, Vercel/Render 배포 설정, Docker Compose 및 GitHub Codespaces(`.devcontainer`) 환경 구성, PostgreSQL(Supabase) 스키마 및 가상 시드 데이터(`backend/db/*`)<br>**지원/승인, 알림 및 실시간 1:1 쪽지**: 지원서 제출/보완/승인(`FOR UPDATE` 트랜잭션)/거절/취소, KST 마감 검증, 알림 센터(모집 알림 및 상단 쪽지 뱃지 분리) 및 내 모집/지원 허브, `Socket.IO` 실시간 알림/1:1 쪽지(`conversations`, `messages`) 및 로그아웃 소켓 종료<br>**인증/보안 통합 및 공용 UI 정리**: `requireAuth`(`publicUser` 정제), 공통 검증 유틸(`backend/utils/validation.js`), `BroadcastChannel` 멀티탭 세션 동기화, 이메일 인증 통합 마이그레이션, 보안 테스트 4종(`tests/01` ~ `04`), 공용 `httpClient`/`Modal`/`SubPageTopBar`/`MessageIcon` 추출, Sticky 상세 사이드바 및 모바일 2탭 레이아웃 |
+| **김희서 (Ella)** | `@HeeSeoKim-73` | **회원 인증 및 보안**: 이메일 기반 회원가입/로그인/로그아웃 API(`authController`, `userModel`, `routes/auth`), `bcrypt`(cost 10) 비밀번호 해싱 및 평문 인증 제거, `express-session` 적용 및 세션 비밀키 32자 이상 검증, 헤더 로그인/회원가입 모달(`AuthBar`, 입력 안내 및 멀티탭 로그인 모달 자동 닫기)<br>**모집글 CRUD 및 게시판 UX/보안 테스트**: PostgreSQL 기반 모집글 CRUD API 및 트랜잭션(`postController`, `postModel`, `routes/posts`), 게시판 검색/분류/학과 필터 및 마감 글 제외 토글/초기화/건수 표시(`Body`, `PostFilters`), 폼 검증 통일 및 승인 인원 학과 보호(`PostForm`), `정원 마감` 배지 및 4줄 말줄임(`PostCard`), 회원가입 및 모집글 보안 테스트(`tests/05`: 대소문자 이메일 중복, `passwordHash` 미노출, 정원 상한 초과 검증) |
 
 ## Tech Stack
 
@@ -21,9 +21,9 @@
 ## Features
 
 - **회원 인증**: 이메일 기반 회원가입·로그인·로그아웃, `bcrypt`(cost 10) 비밀번호 해싱 및 `express-session` 쿠키 인증(`httpOnly`, `sameSite`)
-- **팀원 모집 게시판**: 모집글 CRUD, 분류/학과 필터링, 검색, 학과별 정원 현황, 마감 상태(`마감`, `D-day`, `D-3` 임박) 뱃지 및 역할별 동선 분리
+- **팀원 모집 게시판**: 모집글 CRUD, 분류/학과 필터링, 검색, 마감 글 제외 토글, 필터 초기화 및 검색 결과 건수 표시, 학과별 정원 현황, 마감 상태(`마감됨`, `정원 마감`, `D-day`, `D-3` 임박) 뱃지 및 역할별 동선 분리
 - **지원 및 승인 관리**: 학과별 지원서 제출, 보완 요청 및 재제출, 승인/거절/지원 취소, 목표 인원 달성 시 자동 마감, 내 활동 허브(`내 모집/지원`)
-- **실시간 알림 센터**: 4개 탭(`전체`, `안 읽음`, `모집/지원`, `쪽지`), 단건/일괄 읽음 및 삭제, `Socket.IO` 실시간 갱신
+- **실시간 알림 센터 및 쪽지 뱃지 분리**: 상단 쪽지 안 읽은 대화 뱃지와 모집/지원 알림 벨(`전체`, `안 읽음`)을 분리하고 단건/일괄 읽음 및 삭제, `Socket.IO` 실시간 갱신 지원
 - **실시간 1:1 쪽지**: 대화방 개설, `Socket.IO` 기반 실시간 송수신, 수정, soft delete, 읽음 처리 및 알림 연동
 
 ## Getting Started
@@ -107,7 +107,7 @@ Node.js 20 이상과 PostgreSQL(`DATABASE_URL`) 환경이 필요합니다. **Git
 | Method | Path | Auth | Purpose |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/notifications` | Yes | 알림 목록 및 안 읽은 개수 조회 |
-| `PATCH` | `/api/notifications/read-all?filter=` | Yes | 필터(`all`, `unread`, `recruitment`, `message`) 일괄 읽음 |
+| `PATCH` | `/api/notifications/read-all?filter=` | Yes | 필터(`all`, `unread`, `recruitment`, `recruitment_unread`, `message`) 일괄 읽음 |
 | `DELETE` | `/api/notifications?filter=` | Yes | 필터 기준 일괄 삭제 |
 | `PATCH` | `/api/notifications/:id/read` | Yes (Recipient) | 단건 알림 읽음 처리 |
 | `DELETE` | `/api/notifications/:id` | Yes (Recipient) | 단건 알림 삭제 |
@@ -126,7 +126,7 @@ Node.js 20 이상과 PostgreSQL(`DATABASE_URL`) 환경이 필요합니다. **Git
 
 #### Socket.IO Events
 
-핸드셰이크 시 `sessionMiddleware`로 세션을 검증(미인증 시 `UNAUTHORIZED`)한 뒤 개인 룸(`user:<id>`)으로 이벤트를 발행합니다.
+핸드셰이크 시 `sessionMiddleware`로 세션을 검증(미인증 시 `UNAUTHORIZED`)한 뒤 개인 룸(`user:<id>`)과 세션 룸(`session:<sid>`)에 참가시켜 실시간 이벤트 발행 및 로그아웃 시 소켓 종료를 처리합니다.
 
 | Event | Target | Trigger |
 | :--- | :--- | :--- |
@@ -134,7 +134,7 @@ Node.js 20 이상과 PostgreSQL(`DATABASE_URL`) 환경이 필요합니다. **Git
 | `message:updated` | 참여자(`user1`, `user2`) | 쪽지 수정 |
 | `message:deleted` | 참여자(`user1`, `user2`) | 쪽지 soft delete |
 | `message:read` | 상대방 | 대화방 조회 또는 읽음 처리 |
-| `notification:updated` | 수신자 / 읽음 처리자 | 새 쪽지 알림 생성 또는 대화 읽음 반영 |
+| `notification:updated` | 수신자 / 읽음 처리자 | 지원/승인/보완/거절/마감 알림 또는 새 쪽지 알림 생성, 대화 읽음 반영 |
 
 </details>
 
@@ -249,10 +249,10 @@ npm test
 ```
 
 - `tests/01-invalid-login.test.js`: 미등록 이메일 및 잘못된 비밀번호 `401` + 동일 에러 메시지 검증
-- `tests/02-user-isolation.test.js`: 미인증 차단(`401`) 및 타 사용자 지원서/알림 열람, 수정, 삭제 차단(`403` 및 데이터 격리) 검증
+- `tests/02-user-isolation.test.js`: 미인증 차단(`401`), 타 사용자 지원서/알림 격리(`403`), `int4` 범위 초과 차단(`404`), 마감일 경과 모집글 지원 차단(`409`) 검증
 - `tests/03-logout-session.test.js`: 로그아웃 이후 기존 세션 쿠키 무효화(`401` 차단) 및 `/api/auth/me` 응답 정제 검증
-- `tests/04-messages-security.test.js`: 쪽지 CRUD, 읽음/알림 연동, 권한 격리(`401`/`403`/`404`/`409`), Socket.IO 인증 및 룸 격리 검증
-- `tests/05-auth-posts-security.test.js`: 회원가입 유효성/이메일 중복(`400`/`409`), `bcrypt` 해싱, 로그인, 모집글 CRUD·소유권 격리(`401`/`403`/`404`)·지원서 보호(`409`) 검증
+- `tests/04-messages-security.test.js`: 쪽지 CRUD, 읽음/알림 연동, 권한 격리(`401`/`403`/`404`/`409`), Socket.IO 인증, 룸 격리 및 로그아웃 시 활성 소켓 강제 종료 검증
+- `tests/05-auth-posts-security.test.js`: 회원가입 유효성 및 대소문자 이메일 중복(`400`/`409`), `bcrypt` 해싱, 응답 JSON `passwordHash` 미노출(R7), 정원 상한 초과 차단(`400`), 로그인, 모집글 CRUD 및 소유권 격리(`401`/`403`/`404`), 지원서 보호(`409`) 검증
 
 ## Project Structure
 

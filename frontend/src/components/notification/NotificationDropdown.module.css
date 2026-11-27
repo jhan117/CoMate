@@ -40,6 +40,18 @@
   color: #111827;
 }
 
+.headerTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headerSubMeta {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .filterTabs {
   display: flex;
   flex-wrap: wrap;

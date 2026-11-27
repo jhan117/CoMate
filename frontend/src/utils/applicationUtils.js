@@ -17,6 +17,28 @@ export function getSeoulDateKey(iso) {
   }).format(new Date(iso));
 }
 
+export function getDeadlineMeta(deadline) {
+  if (!deadline) {
+    return { label: "", variant: "open", isClosed: false };
+  }
+  const today = getSeoulDateKey(new Date());
+  const days = Math.round((Date.parse(deadline) - Date.parse(today)) / 86400000);
+
+  if (!Number.isFinite(days)) {
+    return { label: "", variant: "open", isClosed: false };
+  }
+  if (days < 0) {
+    return { label: "마감", variant: "closed", isClosed: true };
+  }
+  if (days === 0) {
+    return { label: "D-day", variant: "urgent", isClosed: false };
+  }
+  if (days <= 3) {
+    return { label: `D-${days}`, variant: "soon", isClosed: false };
+  }
+  return { label: `D-${days}`, variant: "open", isClosed: false };
+}
+
 export function formatFullDate(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("ko-KR", {

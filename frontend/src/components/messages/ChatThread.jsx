@@ -85,17 +85,15 @@ function ChatThread({
             <div className={styles.partnerTextGroup}>
               <div className={styles.partnerTitleRow}>
                 <h3 className={styles.partnerName}>{partner.name}</h3>
-                {partner.email && (
-                  <span className={styles.partnerEmail}>
-                    ({partner.email})
-                  </span>
-                )}
                 {partner.dept && (
                   <span className={styles.partnerDeptBadge}>
                     {partner.dept}
                   </span>
                 )}
               </div>
+              {partner.email && (
+                <p className={styles.partnerEmail}>{partner.email}</p>
+              )}
               {conversation.post?.id && (
                 <div className={styles.postLinkRow}>
                   <span className={styles.postContextLabel}>
@@ -126,10 +124,10 @@ function ChatThread({
         ) : messages.length === 0 ? (
           <div className={styles.noMessagesBox}>
             <p className={styles.noMessagesTitle}>
-              {partner.name} 님과의 첫 쪽지를 보내보세요!
+              {partner.name} 님에게 첫 쪽지를 보내보세요.
             </p>
             <p className={styles.noMessagesSub}>
-              보낸 쪽지는 실시간으로 전달되며 대화 내역에 저장됩니다.
+              메시지를 입력해 대화를 시작할 수 있습니다.
             </p>
           </div>
         ) : (

@@ -1,8 +1,6 @@
 const users = require('../models/userModel');
-
-function text(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
+const { disconnectSession } = require('../socket');
+const { cleanText } = require('../utils/validation');
 
 function startSession(req, res, next, user, status) {
   req.session.regenerate((error) => {
@@ -20,9 +18,9 @@ function startSession(req, res, next, user, status) {
 
 
 async function signup(req, res, next) {
-  const email = text(req.body?.email).toLowerCase();
-  const name = text(req.body?.name);
-  const dept = text(req.body?.dept);
+  const email = cleanText(req.body?.email).toLowerCase();
+  const name = cleanText(req.body?.name);
+  const dept = cleanText(req.body?.dept);
   const password = req.body?.password;
 
   if (
@@ -59,7 +57,7 @@ async function signup(req, res, next) {
 
 
 async function login(req, res, next) {
-  const email = text(req.body?.email).toLowerCase();
+  const email = cleanText(req.body?.email).toLowerCase();
   const password = req.body?.password;
 
   if (
@@ -90,9 +88,12 @@ function me(req, res) {
 }
 
 function logout(req, res, next) {
+  const sessionId = req.sessionID;
+
   req.session.destroy((error) => {
     if (error) return next(error);
 
+    disconnectSession(sessionId);
     res.clearCookie('comate.sid', {
       path: '/',
       httpOnly: true,

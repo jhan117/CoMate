@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../db');
+const { isIntegerId } = require('../utils/validation');
 
 async function findByEmail(email) {
   const result = await db.query(
@@ -13,11 +14,7 @@ async function findByEmail(email) {
 }
 
 async function findById(id) {
-  if (
-    !/^\d+$/.test(String(id)) ||
-    Number(id) < 1 ||
-    Number(id) > 2147483647
-  ) {
+  if (!isIntegerId(id)) {
     return null;
   }
 

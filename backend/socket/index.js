@@ -1,11 +1,8 @@
 const { Server } = require('socket.io');
-const messageModel = require('../models/messageModel');
+const userModel = require('../models/userModel');
+const { isIntegerId } = require('../utils/validation');
 
 let ioInstance = null;
-
-function isIntegerId(value) {
-  return /^\d+$/.test(String(value || '').trim());
-}
 
 function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
   const io = new Server(httpServer, {
@@ -24,13 +21,14 @@ function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
         return next(new Error('UNAUTHORIZED'));
       }
 
-      const user = await messageModel.findUserById(sessionUserId);
-      if (!user) {
+      const userRow = await userModel.findById(sessionUserId);
+      if (!userRow) {
         return next(new Error('UNAUTHORIZED'));
       }
 
+      const user = userModel.publicUser(userRow);
       socket.user = user;
-      socket.userId = String(user.id);
+      socket.userId = user.id;
       return next();
     } catch (error) {
       return next(error);
@@ -39,14 +37,14 @@ function initSocket(httpServer, { sessionMiddleware, allowedOrigins }) {
 
   io.on('connection', (socket) => {
     socket.join(`user:${socket.userId}`);
+    const sessionId = socket.request.sessionID;
+    if (sessionId) {
+      socket.join(`session:${sessionId}`);
+    }
   });
 
   ioInstance = io;
   return io;
-}
-
-function getIO() {
-  return ioInstance;
 }
 
 function emitToUser(userId, event, payload) {
@@ -54,8 +52,13 @@ function emitToUser(userId, event, payload) {
   ioInstance.to(`user:${String(userId)}`).emit(event, payload);
 }
 
+function disconnectSession(sessionId) {
+  if (!ioInstance || !sessionId) return;
+  ioInstance.in(`session:${String(sessionId)}`).disconnectSockets(true);
+}
+
 module.exports = {
   initSocket,
-  getIO,
   emitToUser,
+  disconnectSession,
 };

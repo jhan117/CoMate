@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { useNotifications } from "../../hooks/useNotifications";
 import NotificationDropdown from "./NotificationDropdown";
 import MyActivityDropdown from "./MyActivityDropdown";
 import styles from "./NotificationBell.module.css";
 
-function NotificationBell({ currentUser }) {
+function NotificationBell({
+  activeUser,
+  notifications,
+  unreadCount,
+  error,
+  actions,
+}) {
   const [open, setOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const wrapperRef = useRef(null);
-
-  const { activeUser, notifications, unreadCount, error, actions } =
-    useNotifications(currentUser);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -74,20 +76,22 @@ function NotificationBell({ currentUser }) {
           className={`${styles.currentUserBadge} ${
             activityOpen ? styles.bellBtnActive : ""
           }`}
+          title={`${activeUser.name} (${activeUser.dept}) 내 모집 및 지원 현황`}
           aria-label="내 모집 및 지원 현황 열기"
           aria-expanded={activityOpen}
           onClick={handleToggleActivity}
         >
           <strong>{activeUser.name}</strong>{" "}
           <span className={styles.userHonorific}>님</span>{" "}
-          <span className={styles.userDeptText}>({activeUser.dept}) · </span>
-          <span className={styles.hubTriggerLabel}>내 모집·지원 ▾</span>
-          <span className={styles.hubTriggerCompact}>▾</span>
+          <span className={styles.hubChevron}>▾</span>
         </button>
       )}
 
       {activityOpen && activeUser && (
-        <MyActivityDropdown onClose={() => setActivityOpen(false)} />
+        <MyActivityDropdown
+          activeUser={activeUser}
+          onClose={() => setActivityOpen(false)}
+        />
       )}
 
       {open && (

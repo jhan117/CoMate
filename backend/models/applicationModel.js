@@ -1,4 +1,5 @@
 const db = require('../db');
+const { toIsoString } = require('../utils/validation');
 
 function mapApplicationRow(row) {
   if (!row) return null;
@@ -15,11 +16,9 @@ function mapApplicationRow(row) {
     feedback: isPendingResubmitted ? '' : row.feedback || '',
     previousFeedback: isPendingResubmitted ? row.feedback || '' : '',
     isResubmitted: hasUpdated,
-    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
-    processedAt: row.processed_at
-      ? new Date(row.processed_at).toISOString()
-      : null,
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
+    processedAt: toIsoString(row.processed_at),
     applicantEmail: row.applicant_email || '',
     applicantName: row.applicant_name || '알 수 없음',
     applicantDept: row.applicant_dept || '',
@@ -44,16 +43,6 @@ const BASE_APPLICATION_SELECT = `
 `;
 
 const applicationModel = {
-  async findUserById(userId) {
-    const { rows } = await db.query(
-      `SELECT id::text AS id, email, name, dept
-       FROM users
-       WHERE id = $1`,
-      [userId]
-    );
-    return rows[0] || null;
-  },
-
   async findPostById(postId) {
     const postResult = await db.query(
       `SELECT
@@ -92,7 +81,7 @@ const applicationModel = {
 
     return {
       ...post,
-      createdAt: post.createdAt ? new Date(post.createdAt).toISOString() : null,
+      createdAt: toIsoString(post.createdAt),
       departments: deptResult.rows,
     };
   },
@@ -154,7 +143,7 @@ const applicationModel = {
 
     return rows.map((row) => ({
       ...row,
-      createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
+      createdAt: toIsoString(row.createdAt),
     }));
   },
 
@@ -198,6 +187,7 @@ const applicationModel = {
            status = 'pending',
            updated_at = NOW()
        WHERE id = $3
+         AND status = 'revision_requested'
        RETURNING id`,
       [targetDept, String(message).trim(), id]
     );
@@ -221,24 +211,40 @@ const applicationModel = {
     return this.findById(rows[0].id);
   },
 
-  async incrementPostDeptMember(postId, deptName) {
+  async approveApplication(applicationId, postId) {
     const txResult = await db.withTransaction(async (client) => {
+      // 지원서 행에 락을 걸어서 최신 상태 다시 확인
+      const appRes = await client.query(
+        `SELECT id, post_id, target_dept, status
+        FROM applications
+        WHERE id = $1 AND post_id = $2
+        FOR UPDATE`,
+        [applicationId, postId]
+      );
+
+      const app = appRes.rows[0];
+      if (!app) return { error: 'APP_NOT_FOUND' };
+
+      if (app.status === 'approved' || app.status === 'rejected')
+        return { error: 'ALREADY_PROCESSED', status: app.status };
+
+      // 모집 부문 행에 락 걸어서 정원 확인
       const deptRes = await client.query(
         `SELECT id, dept_name AS "deptName", current_members AS "currentMembers", max_members AS "maxMembers"
-         FROM post_departments
-         WHERE post_id = $1 AND dept_name = $2
-         FOR UPDATE`,
-        [postId, deptName]
+        FROM post_departments
+        WHERE post_id = $1 AND dept_name = $2
+        FOR UPDATE`,
+        [postId, app.target_dept]
       );
 
       const dept = deptRes.rows[0];
       if (!dept) return { error: 'DEPT_NOT_FOUND' };
 
-      if (dept.currentMembers >= dept.maxMembers) {
+      if (dept.currentMembers >= dept.maxMembers)
         return { error: 'DEPT_FULL', dept };
-      }
 
-      const updatedRes = await client.query(
+      // 정원 +1
+      const updatedDeptRes = await client.query(
         `UPDATE post_departments
          SET current_members = current_members + 1
          WHERE id = $1
@@ -246,10 +252,23 @@ const applicationModel = {
         [dept.id]
       );
 
-      return { dept: updatedRes.rows[0] };
+      // 같은 트랜잭션 내에서 지원서 상태 approved로 확정
+      await client.query(
+        `UPDATE applications
+         SET status = 'approved',
+             feedback = '',
+             processed_at = NOW()
+         WHERE id = $1`,
+        [app.id]
+      );
+
+      return { dept: updatedDeptRes.rows[0] };
     });
 
-    return txResult;
+    if (txResult.error) return txResult;
+
+    const application = await this.findById(applicationId);
+    return { dept: txResult.dept, application };
   },
 
   async autoRejectPendingByDept(
@@ -282,7 +301,9 @@ const applicationModel = {
 
   async removeById(id) {
     const { rowCount } = await db.query(
-      'DELETE FROM applications WHERE id = $1',
+      `DELETE FROM applications
+      WHERE id = $1
+        AND status IN ('pending', 'revision_requested')`,
       [id]
     );
     return rowCount > 0;

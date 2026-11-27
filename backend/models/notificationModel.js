@@ -1,4 +1,5 @@
 const db = require('../db');
+const { toIsoString } = require('../utils/validation');
 
 function mapNotificationRow(row) {
   if (!row) return null;
@@ -12,11 +13,17 @@ function mapNotificationRow(row) {
     title: row.title,
     message: row.message,
     isRead: Boolean(row.is_read),
-    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    createdAt: toIsoString(row.created_at),
   };
 }
 
-const VALID_NOTIFICATION_FILTERS = ['all', 'unread', 'recruitment', 'message'];
+const VALID_NOTIFICATION_FILTERS = [
+  'all',
+  'unread',
+  'recruitment',
+  'recruitment_unread',
+  'message',
+];
 
 function getFilterSqlClause(filter = 'all') {
   switch (filter) {
@@ -26,6 +33,8 @@ function getFilterSqlClause(filter = 'all') {
       return ' AND is_read = FALSE';
     case 'recruitment':
       return " AND type <> 'message_new'";
+    case 'recruitment_unread':
+      return " AND type <> 'message_new' AND is_read = FALSE";
     case 'message':
       return " AND type = 'message_new'";
     default:

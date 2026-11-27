@@ -388,14 +388,36 @@ async function run() {
       await db.pool.end();
     }
 
-    // 6. 로그아웃 후 구 쿠키 REST/소켓 재사용 차단
-    const logoutRes = await request(
-      baseUrl,
-      '/api/auth/logout',
-      { method: 'POST' },
-      thirdCookie
-    );
-    assert.equal(logoutRes.status, 204);
+    // 6. 로그아웃 시 기존 활성 소켓 강제 종료 및 구 쿠키 REST/소켓 재사용 차단
+    const activeThirdSocket = await connectSocket(baseUrl, thirdCookie);
+    const disconnectPromise = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('로그아웃 후 기존 활성 소켓이 자동 종료되지 않았습니다.'));
+      }, 3000);
+      activeThirdSocket.once('disconnect', (reason) => {
+        clearTimeout(timer);
+        resolve(reason);
+      });
+    });
+
+    try {
+      const logoutRes = await request(
+        baseUrl,
+        '/api/auth/logout',
+        { method: 'POST' },
+        thirdCookie
+      );
+      assert.equal(logoutRes.status, 204);
+
+      const disconnectReason = await disconnectPromise;
+      assert.equal(
+        disconnectReason,
+        'io server disconnect',
+        '로그아웃 시 서버가 해당 세션의 활성 소켓을 강제 종료해야 합니다.'
+      );
+    } finally {
+      activeThirdSocket.disconnect();
+    }
 
     const afterLogoutRest = await request(
       baseUrl,

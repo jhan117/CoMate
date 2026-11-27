@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { deletePost, fetchPosts, savePost } from '../api/postApi'
+import { getDeadlineMeta } from '../utils/applicationUtils'
 import Button from './common/Button'
 import Callout from './common/Callout'
 import ConfirmModal from './common/ConfirmModal'
@@ -17,12 +18,14 @@ export default function Body({ user, authLoading }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
   const [department, setDepartment] = useState('')
+  const [hideClosed, setHideClosed] = useState(false)
   const [editor, setEditor] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
 
   if (prevUserId !== userId) {
     setPrevUserId(userId)
@@ -30,6 +33,7 @@ export default function Body({ user, authLoading }) {
     setDeleteTarget(null)
     setError('')
     setFormError('')
+    setDeleteError('')
   }
 
   useEffect(() => {
@@ -55,21 +59,36 @@ export default function Body({ user, authLoading }) {
   )].sort((a, b) => a.localeCompare(b, 'ko'))
 
   const keyword = query.trim().toLowerCase()
-  const visiblePosts = posts.filter((post) =>
-    (!category || post.category === category) &&
-    (!department || post.departments.some((dept) => dept.deptName === department)) &&
-    `${post.title} ${post.content ?? ''}`.toLowerCase().includes(keyword),
-  )
+  const visiblePosts = posts.filter((post) => {
+    const isFull = post.departments.length > 0 &&
+      post.departments.every((dept) => dept.currentMembers >= dept.maxMembers)
+    const isClosed = getDeadlineMeta(post.deadline).isClosed || isFull
+
+    return (
+      (!hideClosed || !isClosed) &&
+      (!category || post.category === category) &&
+      (!department || post.departments.some((dept) => dept.deptName === department)) &&
+      `${post.title} ${post.content ?? ''}`.toLowerCase().includes(keyword)
+    )
+  })
 
   function openEditor(post) {
     setFormError('')
     setEditor(post)
   }
-
   const closeEditor = useCallback(() => {
     setFormError('')
     setEditor(null)
   }, [])
+
+  function openDeleteModal(post) {
+    setDeleteError('')
+    setDeleteTarget(post)
+  }
+  function closeDeleteModal() {
+    setDeleteError('')
+    setDeleteTarget(null)
+  }
 
   async function save(fields) {
     setBusy(true)
@@ -81,9 +100,12 @@ export default function Body({ user, authLoading }) {
         ? previous.map((post) => post.id === saved.id ? saved : post)
         : [saved, ...previous],
       )
-      setQuery('')
-      setCategory('')
-      setDepartment('')
+      if (!editor.id) {
+        setQuery('')
+        setCategory('')
+        setDepartment('')
+        setHideClosed(false)
+      }
       setEditor(null)
     } catch (err) {
       setFormError(err.message)
@@ -96,7 +118,7 @@ export default function Body({ user, authLoading }) {
     if (!deleteTarget) return
 
     setBusy(true)
-    setError('')
+    setDeleteError('')
 
     try {
       await deletePost(deleteTarget.id)
@@ -105,8 +127,7 @@ export default function Body({ user, authLoading }) {
       setDepartment('')
       setDeleteTarget(null)
     } catch (err) {
-      setError(err.message)
-      setDeleteTarget(null)
+      setDeleteError(err.message)
     } finally {
       setBusy(false)
     }
@@ -130,8 +151,11 @@ export default function Body({ user, authLoading }) {
         onCategoryChange={setCategory}
         department={department}
         onDepartmentChange={setDepartment}
+        hideClosed={hideClosed}
+        onHideClosedChange={setHideClosed}
         categories={categories}
         departments={departments}
+        resultCount={visiblePosts.length}
       />
 
       {!authLoading && !userId && (
@@ -172,7 +196,7 @@ export default function Body({ user, authLoading }) {
             canEdit={Boolean(userId) && userId === post.authorId}
             busy={busy}
             onEdit={() => openEditor(post)}
-            onDelete={() => setDeleteTarget(post)}
+            onDelete={() => openDeleteModal(post)}
           />
         ))}
       </section>
@@ -182,12 +206,13 @@ export default function Body({ user, authLoading }) {
         title="모집글 삭제"
         description="이 모집글을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
         preview={deleteTarget?.title || ''}
+        error={deleteError}
         confirmLabel="삭제"
         cancelLabel="취소"
         confirmVariant="dangerSolid"
         busy={busy}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={closeDeleteModal}
       />
     </main>
   )

@@ -1,31 +1,14 @@
 import { useLayoutEffect, useRef } from 'react'
-import { getSeoulDateKey } from '../../utils/applicationUtils'
+import { getDeadlineMeta } from '../../utils/applicationUtils'
 import Button from '../common/Button'
 import card from './PostCard.module.css'
-
-function getDeadlineMeta(deadline) {
-  const today = getSeoulDateKey(new Date())
-  const days = Math.round((Date.parse(deadline) - Date.parse(today)) / 86400000)
-
-  if (!Number.isFinite(days)) {
-    return { label: '', variant: 'open', isClosed: false }
-  }
-  if (days < 0) {
-    return { label: '마감', variant: 'closed', isClosed: true }
-  }
-  if (days === 0) {
-    return { label: 'D-day', variant: 'urgent', isClosed: false }
-  }
-  if (days <= 3) {
-    return { label: `D-${days}`, variant: 'soon', isClosed: false }
-  }
-  return { label: `D-${days}`, variant: 'open', isClosed: false }
-}
 
 export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDelete }) {
   const detailUrl = `/posts/${encodeURIComponent(post.id)}/application`
   const deadlineMeta = getDeadlineMeta(post.deadline)
-  const isClosed = deadlineMeta.isClosed
+  const isFull = post.departments.length > 0 &&
+    post.departments.every((dept) => dept.currentMembers >= dept.maxMembers)
+  const isClosed = deadlineMeta.isClosed || isFull
   const cardRef = useRef(null)
 
   useLayoutEffect(() => {
@@ -60,7 +43,11 @@ export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDe
       <div className={card.badgeRow}>
         <span className={card.categoryBadge}>{post.category}</span>
         <div className={card.deadlineGroup}>
-          {deadlineMeta.label && (
+          {isFull ? (
+            <span className={`${card.deadlineBadge} ${card.closed}`}>
+              정원 마감
+            </span>
+          ) : deadlineMeta.label && (
             <span className={`${card.deadlineBadge} ${card[deadlineMeta.variant]}`}>
               {deadlineMeta.label}
             </span>
@@ -73,14 +60,14 @@ export default function PostCard({ post, isLoggedIn, canEdit, busy, onEdit, onDe
 
       <h2 className={card.title}>{post.title}</h2>
       <p className={card.author}>모집 팀장 <strong>{post.author}</strong></p>
-      
+
       {post.content && (
         <div className={card.contentSection}>
           <strong>모집 상세 안내</strong>
           <p>{post.content}</p>
         </div>
       )}
-      
+
       <ul className={card.quotaList}>
         {post.departments.map(({ deptName, currentMembers, maxMembers }) => (
           <li key={deptName} className={card.quotaItem}>

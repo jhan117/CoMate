@@ -9,7 +9,6 @@ import {
 import { APPLICATION_STATUS } from "../constants/applicationConstants";
 import {
   NOTIFICATION_EVENTS,
-  emitActiveUserChanged,
   emitNotificationsUpdated,
 } from "../constants/notificationConstants";
 
@@ -67,7 +66,6 @@ export function usePostApplication(postId, externalUser = null) {
       setApplications(data.applications);
       if (data.sessionUser) {
         setSessionUser(data.sessionUser);
-        emitActiveUserChanged(data.sessionUser);
       }
     } catch (err) {
       setError(err.message || "데이터를 불러오지 못했습니다.");
@@ -91,7 +89,6 @@ export function usePostApplication(postId, externalUser = null) {
         setApplications(data.applications);
         if (data.sessionUser) {
           setSessionUser(data.sessionUser);
-          emitActiveUserChanged(data.sessionUser);
         }
       } catch (err) {
         if (!active) return;
@@ -245,6 +242,9 @@ export function usePostApplication(postId, externalUser = null) {
         setApplications((prev) =>
           prev.map((a) => (a.id === data.application.id ? data.application : a))
         );
+        if (data.post) {
+          setPost(data.post);
+        }
         setIsEditingRevision(false);
         setFeedbackBanner({
           type: "success",
