@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { deletePost, fetchPosts, savePost } from '../api/postApi'
+import { getDeadlineMeta } from '../utils/applicationUtils'
 import Button from './common/Button'
 import Callout from './common/Callout'
 import ConfirmModal from './common/ConfirmModal'
@@ -17,6 +18,7 @@ export default function Body({ user, authLoading }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
   const [department, setDepartment] = useState('')
+  const [hideClosed, setHideClosed] = useState(false)
   const [editor, setEditor] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -57,11 +59,18 @@ export default function Body({ user, authLoading }) {
   )].sort((a, b) => a.localeCompare(b, 'ko'))
 
   const keyword = query.trim().toLowerCase()
-  const visiblePosts = posts.filter((post) =>
-    (!category || post.category === category) &&
-    (!department || post.departments.some((dept) => dept.deptName === department)) &&
-    `${post.title} ${post.content ?? ''}`.toLowerCase().includes(keyword),
-  )
+  const visiblePosts = posts.filter((post) => {
+    const isFull = post.departments.length > 0 &&
+      post.departments.every((dept) => dept.currentMembers >= dept.maxMembers)
+    const isClosed = getDeadlineMeta(post.deadline).isClosed || isFull
+
+    return (
+      (!hideClosed || !isClosed) &&
+      (!category || post.category === category) &&
+      (!department || post.departments.some((dept) => dept.deptName === department)) &&
+      `${post.title} ${post.content ?? ''}`.toLowerCase().includes(keyword)
+    )
+  })
 
   function openEditor(post) {
     setFormError('')
@@ -91,9 +100,12 @@ export default function Body({ user, authLoading }) {
         ? previous.map((post) => post.id === saved.id ? saved : post)
         : [saved, ...previous],
       )
-      setQuery('')
-      setCategory('')
-      setDepartment('')
+      if (!editor.id) {
+        setQuery('')
+        setCategory('')
+        setDepartment('')
+        setHideClosed(false)
+      }
       setEditor(null)
     } catch (err) {
       setFormError(err.message)
@@ -139,8 +151,11 @@ export default function Body({ user, authLoading }) {
         onCategoryChange={setCategory}
         department={department}
         onDepartmentChange={setDepartment}
+        hideClosed={hideClosed}
+        onHideClosedChange={setHideClosed}
         categories={categories}
         departments={departments}
+        resultCount={visiblePosts.length}
       />
 
       {!authLoading && !userId && (

@@ -32,6 +32,53 @@
   outline-offset: 1px;
 }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.toggle input {
+  appearance: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background-color: #9ca3af;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toggle input::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked {
+  background-color: #2563eb;
+}
+
+.toggle input:checked::before {
+  transform: translateX(16px);
+}
+
+.toggle input:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 @media (max-width: 600px) {
   .filters {
     flex-direction: column;

@@ -61,6 +61,7 @@ async function run() {
         assert.match(String(res.data?.user?.id), /^\d+$/);
         createdUsers.push(res.data.user.id);
         assert.ok(res.cookie, '가입 후 세션 쿠키가 있어야 합니다.');
+        assert.equal(Object.hasOwn(res.data.user, 'passwordHash'), false, '회원가입 응답에 passwordHash가 노출되면 안 됩니다.');
         return res;
       }
 
@@ -71,6 +72,12 @@ async function run() {
       });
       assert.equal(duplicate.status, 409, '중복 이메일은 409여야 합니다.');
 
+      const duplicateUppercase = await request(baseUrl, signupPath, {
+        method: 'POST',
+        body: JSON.stringify({ email: emailA.toUpperCase(), name: '대소문자 중복', dept: '컴퓨터공학과', password }),
+      });
+      assert.equal(duplicateUppercase.status, 409, '대소문자가 다른 중복 이메일도 409여야 합니다.');
+      
       const stored = await db.query('SELECT id, password_hash FROM users WHERE email = $1', [emailA]);
       assert.equal(stored.rows.length, 1, '신규 회원이 DB에 저장되어야 합니다.');
       assert.match(stored.rows[0].password_hash, /^\$2[aby]\$1[0-9]\$/);
@@ -82,6 +89,13 @@ async function run() {
       });
       assert.equal(login.status, 200, '가입한 계정으로 로그인할 수 있어야 합니다.');
       assert.equal(login.data?.user?.id, userA.data.user.id);
+      assert.equal(Object.hasOwn(login.data.user, 'passwordHash'), false, '로그인 응답에 passwordHash가 노출되면 안 됩니다.');
+
+      const me = await request(baseUrl, '/api/auth/me', {}, login.cookie);
+      assert.equal(me.status, 200);
+      assert.equal(me.data?.user?.id, userA.data.user.id);
+      assert.equal(Object.hasOwn(me.data.user, 'passwordHash'), false, '사용자 정보 응답에 passwordHash가 노출되면 안 됩니다.');
+
       const userB = await signup(emailB, '보안테스트B');
 
       const unauthCreate = await request(baseUrl, '/api/posts', {
@@ -95,6 +109,17 @@ async function run() {
         });
         assert.equal(res.status, 401, `비로그인 ${method} 요청은 401이어야 합니다.`);
       }
+
+      const invalidCapacity = await request(baseUrl, '/api/posts', {
+        method: 'POST',
+        body: JSON.stringify(fields(`${marker}-invalid-capacity`, [
+          { deptName: '컴퓨터공학과', maxMembers: 1001 },
+        ])),
+      }, userA.cookie);
+      if (invalidCapacity.status === 201 && invalidCapacity.data?.id) {
+        createdPosts.push(invalidCapacity.data.id);
+      }
+      assert.equal(invalidCapacity.status, 400, '정원 1000명 초과는 400이어야 합니다.');
 
       const created = await request(baseUrl, '/api/posts', {
         method: 'POST',
@@ -197,7 +222,7 @@ async function run() {
       const stillExists = await db.query('SELECT id FROM posts WHERE id = $1', [postId]);
       assert.equal(stillExists.rows.length, 1, '거부된 삭제 이후 모집글이 유지되어야 합니다.');
 
-            const deletable = await request(baseUrl, '/api/posts', {
+      const deletable = await request(baseUrl, '/api/posts', {
         method: 'POST',
         body: JSON.stringify(fields(`${marker}-deletable`)),
       }, userA.cookie);

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Button from '../common/Button'
 import Callout from '../common/Callout'
 import Modal from '../common/Modal'
+import { getSeoulDateKey } from '../../utils/applicationUtils'
 import styles from './PostForm.module.css'
 
 const emptyDepartment = { deptName: '', maxMembers: '1' }
@@ -48,6 +49,7 @@ export default function PostForm({
   }
 
   const modalTitle = post ? '모집글 수정' : '새 모집글 작성'
+  const todayKST = getSeoulDateKey(new Date())
 
   return (
     <Modal
@@ -70,12 +72,12 @@ export default function PostForm({
               제목
               <input
                 required
+                maxLength={200}
                 value={fields.title}
                 placeholder="예: 2026 교내 해커톤 팀원 모집"
                 onChange={(e) => change('title', e.target.value)}
               />
             </label>
-
             <div className={styles.rowGrid}>
               <label className={styles.field}>
                 분류
@@ -88,6 +90,7 @@ export default function PostForm({
                 <input
                   type="date"
                   required
+                  min={post ? undefined : todayKST}
                   value={fields.deadline}
                   onChange={(e) => change('deadline', e.target.value)}
                 />
@@ -98,6 +101,7 @@ export default function PostForm({
               모집 안내
               <textarea
                 rows={4}
+                maxLength={5000}
                 value={fields.content}
                 placeholder="프로젝트 주제, 진행 방식, 찾는 역할 등을 적어주세요."
                 onChange={(e) => change('content', e.target.value)}
@@ -124,6 +128,7 @@ export default function PostForm({
                       학과 {index + 1}
                       <input
                         required
+                        maxLength={100}
                         value={dept.deptName}
                         placeholder="예: 컴퓨터공학과, 학과 무관"
                         onChange={(e) => changeDepartment(index, 'deptName', e.target.value)}
@@ -134,7 +139,8 @@ export default function PostForm({
                       <input
                         type="number"
                         required
-                        min={1}
+                        min={Math.max(1, dept.currentMembers ?? 1)}
+                        max={1000}
                         step={1}
                         value={dept.maxMembers}
                         onChange={(e) => changeDepartment(index, 'maxMembers', e.target.value)}
@@ -145,7 +151,7 @@ export default function PostForm({
                       variant="danger"
                       size="sm"
                       className={styles.removeButton}
-                      disabled={fields.departments.length === 1}
+                      disabled={fields.departments.length === 1 || (dept.currentMembers ?? 0) > 0}
                       onClick={() => change('departments', fields.departments.filter((_, i) => i !== index))}
                     >
                       삭제

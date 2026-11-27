@@ -1,4 +1,5 @@
 const db = require('../db');
+const { isIntegerId, toIsoString } = require('../utils/validation');
 
 async function list() {
   const result = await db.query(
@@ -31,17 +32,16 @@ async function list() {
      ORDER BY p.created_at DESC, p.id DESC`
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    createdAt: toIsoString(row.createdAt),
+  }));
 }
 
 
 
 async function find(id) {
-  if (
-    !/^\d+$/.test(String(id)) ||
-    Number(id) < 1 ||
-    Number(id) > 2147483647
-  ) {
+  if (!isIntegerId(id)) {
     return null;
   }
 
@@ -76,7 +76,12 @@ async function find(id) {
     [id]
   );
 
-  return result.rows[0] || null;
+  const row = result.rows[0];
+
+  return row ? {
+    ...row,
+    createdAt: toIsoString(row.createdAt),
+  } : null;
 }
 
 async function create(fields, authorId) {
