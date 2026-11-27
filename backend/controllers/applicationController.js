@@ -33,7 +33,9 @@ const applicationController = {
     const sessionUserId = req.userId;
 
     if (!postId) {
-      return res.status(400).json({ message: 'postId 파라미터가 필요합니다.' });
+      return res
+        .status(400)
+        .json({ message: '조회할 모집글 정보가 필요합니다.' });
     }
     if (!isIntegerId(postId)) {
       return res.status(404).json({ message: '모집글을 찾을 수 없습니다.' });
@@ -255,6 +257,11 @@ const applicationController = {
       targetDept,
       message,
     });
+    if (!updatedApplication) {
+      return res.status(409).json({
+        message: '이미 처리되었거나 보완 재제출할 수 없는 지원서입니다.',
+      });
+    }
 
     await notificationModel.create({
       recipientId: post.authorId,
@@ -266,9 +273,12 @@ const applicationController = {
     });
     emitToUser(post.authorId, 'notification:updated', { postId: post.id });
 
+    const updatedPost = await applicationModel.findPostById(post.id);
+
     return res.status(200).json({
       message: '보완된 지원서가 다시 제출되었습니다.',
       application: updatedApplication,
+      post: updatedPost,
     });
   },
 

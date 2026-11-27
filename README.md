@@ -8,8 +8,8 @@
 
 | 팀원 | GitHub | 담당 영역 및 구현 기능 |
 | :--- | :--- | :--- |
-| **권기영 (Kaye)** | `@jhan117` | **초기 세팅, DB 및 실행 통합**: 프로젝트 초기 세팅, 루트 `npm install`/`start` 정적 서빙, Vercel/Render 배포 설정, Docker Compose 및 GitHub Codespaces(`.devcontainer`) 환경 구성, PostgreSQL(Supabase) 스키마 및 가상 시드 데이터(`backend/db/*`)<br>**지원/승인, 알림 및 실시간 1:1 쪽지**: 지원서 제출/보완/승인/거절/취소, 알림 센터 및 내 모집/지원 허브, `Socket.IO` 실시간 알림 및 1:1 쪽지(`conversations`, `messages`)<br>**인증/보안 통합 및 공용 UI 정리**: `requireAuth`(`publicUser` 정제) 및 소유권 검증, 이메일 인증 통합 마이그레이션(지원/쪽지 모델·컴포넌트·테스트), 보안 테스트 4종(`tests/01` ~ `04`), 공용 `httpClient`/`Modal`/`MessageIcon` 추출, `PostForm` 모달, 카드 동선/마감 뱃지 및 세션 동기화 |
-| **김희서 (Ella)** | `@HeeSeoKim-73` | **회원 인증 및 보안**: 이메일 기반 회원가입/로그인/로그아웃 API(`authController`, `userModel`, `routes/auth`), `bcrypt`(cost 10) 비밀번호 해싱 및 평문 인증 제거, `express-session` 적용 및 세션 비밀키 32자 이상 검증, 헤더 로그인/회원가입 모달(`AuthBar`)<br>**모집글 CRUD 및 보안 테스트**: PostgreSQL 기반 모집글 CRUD API 및 트랜잭션(`postController`, `postModel`, `routes/posts`), 게시판 검색/분류/학과 필터(`Body`, `PostFilters`, `PostForm`, `PostCard`), 도메인별 컴포넌트/CSS 모듈 분리, 회원가입·모집글 보안 테스트(`tests/05`) |
+| **권기영 (Kaye)** | `@jhan117` | **초기 세팅, DB 및 실행 통합**: 프로젝트 초기 세팅, 루트 `npm install`/`start` 정적 서빙, Vercel/Render 배포 설정, Docker Compose 및 GitHub Codespaces(`.devcontainer`) 환경 구성, PostgreSQL(Supabase) 스키마 및 가상 시드 데이터(`backend/db/*`)<br>**지원/승인, 알림 및 실시간 1:1 쪽지**: 지원서 제출/보완/승인(`FOR UPDATE` 트랜잭션)/거절/취소, KST 마감 검증, 알림 센터(모집 알림 및 상단 쪽지 뱃지 분리) 및 내 모집/지원 허브, `Socket.IO` 실시간 알림/1:1 쪽지(`conversations`, `messages`) 및 로그아웃 소켓 종료<br>**인증/보안 통합 및 공용 UI 정리**: `requireAuth`(`publicUser` 정제), 공통 검증 유틸(`backend/utils/validation.js`), `BroadcastChannel` 멀티탭 세션 동기화, 이메일 인증 통합 마이그레이션, 보안 테스트 4종(`tests/01` ~ `04`), 공용 `httpClient`/`Modal`/`SubPageTopBar`/`MessageIcon` 추출, Sticky 상세 사이드바 및 모바일 2탭 레이아웃 |
+| **김희서 (Ella)** | `@HeeSeoKim-73` | **회원 인증 및 보안**: 이메일 기반 회원가입/로그인/로그아웃 API(`authController`, `userModel`, `routes/auth`), `bcrypt`(cost 10) 비밀번호 해싱 및 평문 인증 제거, `express-session` 적용 및 세션 비밀키 32자 이상 검증, 헤더 로그인/회원가입 모달(`AuthBar`, 입력 안내 및 멀티탭 로그인 모달 자동 닫기)<br>**모집글 CRUD 및 게시판 UX/보안 테스트**: PostgreSQL 기반 모집글 CRUD API 및 트랜잭션(`postController`, `postModel`, `routes/posts`), 게시판 검색/분류/학과 필터 및 마감 글 제외 토글/초기화/건수 표시(`Body`, `PostFilters`), 폼 검증 통일 및 승인 인원 학과 보호(`PostForm`), `정원 마감` 배지 및 4줄 말줄임(`PostCard`), 회원가입 및 모집글 보안 테스트(`tests/05`: 대소문자 이메일 중복, `passwordHash` 미노출, 정원 상한 초과 검증) |
 
 ## Tech Stack
 
@@ -21,7 +21,7 @@
 ## Features
 
 - **회원 인증**: 이메일 기반 회원가입·로그인·로그아웃, `bcrypt`(cost 10) 비밀번호 해싱 및 `express-session` 쿠키 인증(`httpOnly`, `sameSite`)
-- **팀원 모집 게시판**: 모집글 CRUD, 분류/학과 필터링, 검색, 학과별 정원 현황, 마감 상태(`마감`, `D-day`, `D-3` 임박) 뱃지 및 역할별 동선 분리
+- **팀원 모집 게시판**: 모집글 CRUD, 분류/학과 필터링, 검색, 마감 글 제외 토글, 필터 초기화 및 검색 결과 건수 표시, 학과별 정원 현황, 마감 상태(`마감됨`, `정원 마감`, `D-day`, `D-3` 임박) 뱃지 및 역할별 동선 분리
 - **지원 및 승인 관리**: 학과별 지원서 제출, 보완 요청 및 재제출, 승인/거절/지원 취소, 목표 인원 달성 시 자동 마감, 내 활동 허브(`내 모집/지원`)
 - **실시간 알림 센터 및 쪽지 뱃지 분리**: 상단 쪽지 안 읽은 대화 뱃지와 모집/지원 알림 벨(`전체`, `안 읽음`)을 분리하고 단건/일괄 읽음 및 삭제, `Socket.IO` 실시간 갱신 지원
 - **실시간 1:1 쪽지**: 대화방 개설, `Socket.IO` 기반 실시간 송수신, 수정, soft delete, 읽음 처리 및 알림 연동
@@ -252,7 +252,7 @@ npm test
 - `tests/02-user-isolation.test.js`: 미인증 차단(`401`), 타 사용자 지원서/알림 격리(`403`), `int4` 범위 초과 차단(`404`), 마감일 경과 모집글 지원 차단(`409`) 검증
 - `tests/03-logout-session.test.js`: 로그아웃 이후 기존 세션 쿠키 무효화(`401` 차단) 및 `/api/auth/me` 응답 정제 검증
 - `tests/04-messages-security.test.js`: 쪽지 CRUD, 읽음/알림 연동, 권한 격리(`401`/`403`/`404`/`409`), Socket.IO 인증, 룸 격리 및 로그아웃 시 활성 소켓 강제 종료 검증
-- `tests/05-auth-posts-security.test.js`: 회원가입 유효성/이메일 중복(`400`/`409`), `bcrypt` 해싱, 로그인, 모집글 CRUD·소유권 격리(`401`/`403`/`404`)·지원서 보호(`409`) 검증
+- `tests/05-auth-posts-security.test.js`: 회원가입 유효성 및 대소문자 이메일 중복(`400`/`409`), `bcrypt` 해싱, 응답 JSON `passwordHash` 미노출(R7), 정원 상한 초과 차단(`400`), 로그인, 모집글 CRUD 및 소유권 격리(`401`/`403`/`404`), 지원서 보호(`409`) 검증
 
 ## Project Structure
 

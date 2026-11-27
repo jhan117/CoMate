@@ -74,7 +74,7 @@ function ApplicantCard({
         </Callout>
 
         {application.previousFeedback && !application.feedback && (
-          <Callout variant="neutralBordered" title="이전 보완 요청 내용 (재제출 반영 완료)">
+          <Callout variant="neutralBordered" title="이전 보완 요청 내용">
             {application.previousFeedback}
           </Callout>
         )}

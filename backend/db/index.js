@@ -8,11 +8,11 @@ if (!connectionString) {
   throw new Error('DATABASE_URL 환경 변수를 설정해 주세요.');
 }
 
+const isLocalDb = /(localhost|127\.0\.0\.1)/.test(connectionString);
+
 const pool = new Pool({
   connectionString,
-  ssl: connectionString.includes('localhost')
-    ? false
-    : { rejectUnauthorized: false },
+  ssl: isLocalDb ? false : { rejectUnauthorized: false },
 });
 
 function query(text, params = []) {

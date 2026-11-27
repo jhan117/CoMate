@@ -391,6 +391,24 @@ const messageController = {
       messageModel.findConversationById(existing.conversationId, existing.user2Id),
     ]);
 
+    const recipientId =
+      existing.user1Id === sessionUserId ? existing.user2Id : existing.user1Id;
+    const recipientConversation =
+      existing.user1Id === sessionUserId ? convForUser2 : convForUser1;
+
+    let notificationCleared = false;
+    if (
+      !existing.isRead &&
+      recipientConversation &&
+      recipientConversation.unreadCount === 0
+    ) {
+      notificationCleared =
+        await notificationModel.markMessageNotificationsAsReadByConversation(
+          recipientId,
+          existing.conversationId
+        );
+    }
+
     emitToUser(existing.user1Id, 'message:deleted', {
       conversationId: existing.conversationId,
       messageId: existing.id,
@@ -403,6 +421,11 @@ const messageController = {
       chatMessage,
       conversation: convForUser2,
     });
+    if (notificationCleared) {
+      emitToUser(recipientId, 'notification:updated', {
+        conversationId: existing.conversationId,
+      });
+    }
 
     const senderConversation =
       existing.user1Id === sessionUserId ? convForUser1 : convForUser2;

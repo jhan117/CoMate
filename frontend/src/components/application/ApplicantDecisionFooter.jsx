@@ -66,7 +66,7 @@ function ApplicantDecisionFooter({
         <div className={styles.feedbackFormBox}>
           {isApprovedMode && (
             <Callout variant="success" title="팀원 승인 확인">
-              {`'${application.applicantName}' 님을 '${application.targetDept}' 부문 팀원으로 승인하시겠습니까? 승인 완료 시 해당 부문 모집 인원이 1명 증가하며 되돌릴 수 없습니다.`}
+              {`'${application.applicantName}' 님을 '${application.targetDept}' 부문 팀원으로 승인하시겠습니까? 승인 후에는 팀원으로 확정되며 되돌릴 수 없습니다.`}
             </Callout>
           )}
 

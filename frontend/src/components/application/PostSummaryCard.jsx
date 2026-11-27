@@ -134,12 +134,7 @@ function PostSummaryCard({ post, applications, isAuthorMode }) {
           </button>
           {showContent && (
             <div className={styles.contentBody}>
-              <Callout
-                variant="neutralBordered"
-                title={
-                  isAuthorMode ? "내가 작성한 모집 상세 안내" : "모집 상세 안내"
-                }
-              >
+              <Callout variant="neutralBordered" title="모집 상세 안내">
                 {post.content}
               </Callout>
             </div>

@@ -124,10 +124,10 @@ function ChatThread({
         ) : messages.length === 0 ? (
           <div className={styles.noMessagesBox}>
             <p className={styles.noMessagesTitle}>
-              {partner.name} 님과의 첫 쪽지를 보내보세요!
+              {partner.name} 님에게 첫 쪽지를 보내보세요.
             </p>
             <p className={styles.noMessagesSub}>
-              보낸 쪽지는 실시간으로 전달되며 대화 내역에 저장됩니다.
+              메시지를 입력해 대화를 시작할 수 있습니다.
             </p>
           </div>
         ) : (

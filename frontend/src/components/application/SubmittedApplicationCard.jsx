@@ -29,7 +29,7 @@ function SubmittedApplicationCard({
       <div className={styles.header}>
         <div>
           <span className={styles.subLabel}>내 지원 현황</span>
-          <h3 className={styles.title}>제출된 지원서 내역</h3>
+          <h3 className={styles.title}>내 지원서</h3>
           {application.createdAt && (
             <span className={styles.timeMeta}>
               제출 일시: {formatDate(application.createdAt)}
