@@ -242,6 +242,9 @@ export function usePostApplication(postId, externalUser = null) {
         setApplications((prev) =>
           prev.map((a) => (a.id === data.application.id ? data.application : a))
         );
+        if (data.post) {
+          setPost(data.post);
+        }
         setIsEditingRevision(false);
         setFeedbackBanner({
           type: "success",

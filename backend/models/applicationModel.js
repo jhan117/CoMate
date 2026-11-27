@@ -187,6 +187,7 @@ const applicationModel = {
            status = 'pending',
            updated_at = NOW()
        WHERE id = $3
+         AND status = 'revision_requested'
        RETURNING id`,
       [targetDept, String(message).trim(), id]
     );
