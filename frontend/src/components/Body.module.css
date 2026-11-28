@@ -25,7 +25,7 @@
 
 .crudGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   grid-auto-rows: 8px;
   align-items: start;
   column-gap: 16px;
